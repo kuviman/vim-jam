@@ -96,7 +96,6 @@ pub struct Seat {
     pub position: Vec2<f32>,
     pub leave_position: Vec2<f32>,
     pub radius: f32,
-    pub person: Option<Id>,
     pub order: Option<Order>,
 }
 
@@ -195,7 +194,6 @@ impl Model {
                                 2.0 * f32::PI * i as f32 / SEATS as f32,
                             ),
                         radius: 0.4,
-                        person: None,
                         order: None,
                     });
                 }

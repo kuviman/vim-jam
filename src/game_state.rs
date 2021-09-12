@@ -269,7 +269,12 @@ impl GameState {
                     if self.player.collide(seat.position, seat.radius) {
                         match self.player.unemployed_time {
                             Some(_) => {
-                                if seat.person.is_none() {
+                                if !self
+                                    .model
+                                    .players
+                                    .values()
+                                    .any(|player| player.seat == Some(seat_index))
+                                {
                                     self.player.seat = Some(seat_index);
                                     self.current_order = BTreeSet::new();
                                 }
