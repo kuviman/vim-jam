@@ -25,6 +25,19 @@ impl IdGen {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq, Copy)]
+pub enum PizzaState {
+    Raw,
+    Cooked,
+    Plated,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Pizza {
+    pub ingredients: HashSet<Ingredient>,
+    pub state: PizzaState,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub id: Id,
@@ -32,6 +45,7 @@ pub struct Player {
     pub position: Vec2<f32>,
     pub velocity: Vec2<f32>,
     pub target_velocity: Vec2<f32>,
+    pub pizza: Option<Pizza>,
 }
 
 impl Player {
@@ -44,6 +58,7 @@ impl Player {
             position: vec2(0.0, 0.0),
             velocity: vec2(0.0, 0.0),
             target_velocity: vec2(0.0, 0.0),
+            pizza: None,
         };
         player
     }
@@ -53,11 +68,14 @@ impl Player {
         self.position += self.velocity * delta_time;
     }
 
-    pub fn collide(&mut self, position: Vec2<f32>, radius: f32) {
+    pub fn collide(&mut self, position: Vec2<f32>, radius: f32) -> bool {
         let distance = (self.position - position).len();
         if distance > 0.0001 && distance < radius + self.radius {
             self.position +=
                 (self.position - position).normalize() * (radius + self.radius - distance);
+            true
+        } else {
+            false
         }
     }
 }
@@ -72,12 +90,12 @@ pub struct Table {
     pub order: Option<Order>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum Ingredient {
     Cheese,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum KitchenThingType {
     Oven,
     Dough,

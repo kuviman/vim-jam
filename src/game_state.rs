@@ -41,6 +41,12 @@ impl Drop for GameState {
     }
 }
 
+fn ingredient_color(ingredient: Ingredient) -> Color<f32> {
+    match ingredient {
+        Ingredient::Cheese => Color::YELLOW,
+    }
+}
+
 impl GameState {
     pub fn new(
         geng: &Geng,
@@ -80,6 +86,28 @@ impl GameState {
             player.radius,
             Color::WHITE,
         );
+        if let Some(pizza) = &player.pizza {
+            self.geng.draw_2d().circle(
+                framebuffer,
+                &self.camera,
+                player.position + vec2(0.0, player.radius),
+                0.3,
+                match pizza.state {
+                    PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
+                    PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
+                    PizzaState::Plated => Color::rgb(0.5, 0.5, 0.4),
+                },
+            );
+            for &ingredient in &pizza.ingredients {
+                self.geng.draw_2d().circle(
+                    framebuffer,
+                    &self.camera,
+                    player.position + vec2(0.0, player.radius + 0.5),
+                    0.1,
+                    ingredient_color(ingredient),
+                );
+            }
+        }
     }
 
     fn draw_impl(&mut self, framebuffer: &mut ugli::Framebuffer) {
@@ -106,14 +134,12 @@ impl GameState {
                 &self.camera,
                 thing.position,
                 thing.radius,
-                match &thing.typ {
+                match thing.typ {
                     KitchenThingType::Oven => Color::RED,
                     KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
                     KitchenThingType::TrashCan => Color::GRAY,
                     KitchenThingType::Plates => Color::rgb(0.8, 0.8, 0.8),
-                    KitchenThingType::IngredientBox(ingredient) => match ingredient {
-                        Ingredient::Cheese => Color::YELLOW,
-                    },
+                    KitchenThingType::IngredientBox(ingredient) => ingredient_color(ingredient),
                 },
             );
         }
@@ -155,7 +181,42 @@ impl GameState {
         //         .collide(other_player.position, other_player.radius);
         // }
         for thing in &self.model.kitchen {
-            self.player.collide(thing.position, thing.radius);
+            if self.player.collide(thing.position, thing.radius) {
+                match thing.typ {
+                    KitchenThingType::Dough => {
+                        if self.player.pizza.is_none() {
+                            self.player.pizza = Some(Pizza {
+                                ingredients: HashSet::new(),
+                                state: PizzaState::Raw,
+                            });
+                        }
+                    }
+                    KitchenThingType::IngredientBox(ingredient) => {
+                        if let Some(pizza) = &mut self.player.pizza {
+                            if pizza.state == PizzaState::Raw {
+                                pizza.ingredients.insert(ingredient);
+                            }
+                        }
+                    }
+                    KitchenThingType::Oven => {
+                        if let Some(pizza) = &mut self.player.pizza {
+                            if pizza.state == PizzaState::Raw {
+                                pizza.state = PizzaState::Cooked;
+                            }
+                        }
+                    }
+                    KitchenThingType::Plates => {
+                        if let Some(pizza) = &mut self.player.pizza {
+                            if pizza.state == PizzaState::Cooked {
+                                pizza.state = PizzaState::Plated;
+                            }
+                        }
+                    }
+                    KitchenThingType::TrashCan => {
+                        self.player.pizza = None;
+                    }
+                }
+            }
         }
     }
 }
