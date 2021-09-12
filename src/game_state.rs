@@ -41,12 +41,6 @@ impl Drop for GameState {
     }
 }
 
-fn ingredient_color(ingredient: Ingredient) -> Color<f32> {
-    match ingredient {
-        Ingredient::Cheese => Color::YELLOW,
-    }
-}
-
 impl GameState {
     pub fn new(
         geng: &Geng,
@@ -87,26 +81,11 @@ impl GameState {
             Color::WHITE,
         );
         if let Some(pizza) = &player.pizza {
-            self.geng.draw_2d().circle(
+            self.draw_pizza(
                 framebuffer,
-                &self.camera,
+                pizza,
                 player.position + vec2(0.0, player.radius),
-                0.3,
-                match pizza.state {
-                    PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
-                    PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
-                    PizzaState::Plated => Color::rgb(0.5, 0.5, 0.4),
-                },
             );
-            for &ingredient in &pizza.ingredients {
-                self.geng.draw_2d().circle(
-                    framebuffer,
-                    &self.camera,
-                    player.position + vec2(0.0, player.radius + 0.5),
-                    0.1,
-                    ingredient_color(ingredient),
-                );
-            }
         }
     }
 
@@ -139,7 +118,7 @@ impl GameState {
                     KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
                     KitchenThingType::TrashCan => Color::GRAY,
                     KitchenThingType::Plates => Color::rgb(0.8, 0.8, 0.8),
-                    KitchenThingType::IngredientBox(ingredient) => ingredient_color(ingredient),
+                    KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
                 },
             );
         }
@@ -217,6 +196,37 @@ impl GameState {
                     }
                 }
             }
+        }
+    }
+
+    fn draw_pizza(&self, framebuffer: &mut ugli::Framebuffer, pizza: &Pizza, position: Vec2<f32>) {
+        self.geng.draw_2d().circle(
+            framebuffer,
+            &self.camera,
+            position,
+            0.3,
+            match pizza.state {
+                PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
+                PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
+                PizzaState::Plated => Color::rgb(0.5, 0.5, 0.4),
+            },
+        );
+        self.draw_ingredients(framebuffer, &pizza.ingredients, position + vec2(0.0, 0.3));
+    }
+    fn draw_ingredients(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        ingredients: &HashSet<Ingredient>,
+        position: Vec2<f32>,
+    ) {
+        for (index, &ingredient) in ingredients.iter().enumerate() {
+            self.geng.draw_2d().circle(
+                framebuffer,
+                &self.camera,
+                position + vec2(0.2 * index as f32, 0.0),
+                0.1,
+                ingredient.color(),
+            );
         }
     }
 }

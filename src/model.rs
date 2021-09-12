@@ -95,6 +95,14 @@ pub enum Ingredient {
     Cheese,
 }
 
+impl Ingredient {
+    pub fn color(self) -> Color<f32> {
+        match self {
+            Self::Cheese => Color::YELLOW,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum KitchenThingType {
     Oven,
