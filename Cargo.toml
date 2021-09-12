@@ -1,0 +1,9 @@
+[package]
+name = "vim-jam"
+version = "0.1.0"
+authors = ["kuviman <kuviman@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+geng = "0.8.0-alpha"
+serde = "1"
