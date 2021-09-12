@@ -80,6 +80,7 @@ pub enum Ingredient {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum KitchenThingType {
     Oven,
+    Dough,
     IngredientBox(Ingredient),
     Plates,
 }
@@ -125,6 +126,11 @@ impl Model {
                     typ: KitchenThingType::Oven,
                     position: vec2(-10.0, 2.0),
                     radius: 1.0,
+                },
+                KitchenThing {
+                    typ: KitchenThingType::Dough,
+                    position: vec2(-10.0, 5.0),
+                    radius: 0.7,
                 },
                 KitchenThing {
                     typ: KitchenThingType::Plates,

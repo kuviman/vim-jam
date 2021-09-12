@@ -108,6 +108,7 @@ impl GameState {
                 thing.radius,
                 match &thing.typ {
                     KitchenThingType::Oven => Color::RED,
+                    KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
                     KitchenThingType::Plates => Color::GRAY,
                     KitchenThingType::IngredientBox(ingredient) => match ingredient {
                         Ingredient::Cheese => Color::YELLOW,
