@@ -284,8 +284,8 @@ impl GameState {
                                     if let Some(pizza) = &self.player.pizza {
                                         if pizza.state == PizzaState::Cooked {
                                             if order == &pizza.ingredients {
-                                                // TODO: add score
                                                 self.player.pizza = None;
+                                                self.player.score += 1;
                                                 self.to_send.push(ClientMessage::Event(
                                                     Event::Order(seat_index, None),
                                                 ));
@@ -432,6 +432,19 @@ impl geng::State for GameState {
                 ServerMessage::Update(events) => {
                     for event in events {
                         match event {
+                            Event::Hire(id) if id == self.player.id => {
+                                self.player.unemployed_time = None;
+                                if let Some(seat_index) = self.player.seat {
+                                    self.player.seat = None;
+                                    self.player.position =
+                                        self.model.seats[seat_index].leave_position;
+                                    self.to_send
+                                        .push(ClientMessage::Event(Event::Order(seat_index, None)));
+                                }
+                            }
+                            Event::Fire(id) if id == self.player.id => {
+                                self.player.unemployed_time = Some(0.0);
+                            }
                             _ => {}
                         }
                         self.model.handle(event);
@@ -511,12 +524,6 @@ impl geng::State for GameState {
                         self.to_send
                             .push(ClientMessage::Event(Event::Order(seat_index, None)));
                     }
-                }
-                geng::Key::T => {
-                    self.player.unemployed_time = match self.player.unemployed_time {
-                        Some(_) => None,
-                        None => Some(0.0),
-                    };
                 }
                 _ => {}
             },

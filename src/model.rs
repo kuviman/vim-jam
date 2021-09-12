@@ -40,6 +40,7 @@ pub struct Pizza {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub id: Id,
+    pub score: i32,
     pub radius: f32,
     pub position: Vec2<f32>,
     pub velocity: Vec2<f32>,
@@ -55,6 +56,7 @@ impl Player {
     pub fn new(id_gen: &mut IdGen) -> Self {
         let mut player = Self {
             id: id_gen.gen(),
+            score: 0,
             radius: 0.5,
             position: vec2(0.0, 0.0),
             velocity: vec2(0.0, 0.0),
@@ -148,11 +150,13 @@ pub struct Boss {
     pub position: Vec2<f32>,
     pub size: f32,
     pub target: BossTarget,
+    pub timer: f32,
 }
 
 impl Boss {
     const WALK_SPEED: f32 = 4.0;
     const RUN_SPEED: f32 = 10.0;
+    const FIRE_TIMER: f32 = 60.0;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -169,6 +173,7 @@ pub struct Model {
 }
 
 impl Model {
+    pub const MAX_EMPLOYEES: usize = 5;
     pub fn new() -> Self {
         let mut tables = Vec::new();
         let mut seats = Vec::new();
@@ -270,6 +275,7 @@ impl Model {
         }
         let boss_pos = *pathfind_nodes.choose(&mut global_rng()).unwrap();
         let boss = Boss {
+            timer: 0.0,
             position: boss_pos,
             size: 0.5,
             target: BossTarget::Walk(boss_pos),
@@ -330,6 +336,9 @@ impl Model {
     #[must_use]
     pub fn tick(&mut self) -> Vec<Event> {
         let mut events = Vec::new();
+        if self.players.is_empty() {
+            return events;
+        }
         let boss_node = self.find_node(self.boss.position);
         let boss_target_node = self.find_node(match self.boss.target {
             BossTarget::Hire(id) | BossTarget::Fire(id) => self
@@ -338,9 +347,55 @@ impl Model {
                 .map_or(self.boss.position, |player| player.position),
             BossTarget::Walk(pos) => pos,
         });
+        self.boss.timer += 1.0 / self.ticks_per_second as f32;
         if boss_node == boss_target_node {
-            self.boss.target =
-                BossTarget::Walk(*self.pathfind_nodes.choose(&mut global_rng()).unwrap());
+            match self.boss.target {
+                BossTarget::Fire(id) => {
+                    self.boss.timer = 0.0;
+                    events.push(Event::Reset);
+                    events.push(Event::Fire(id));
+                    self.boss.target = BossTarget::Walk(self.boss.position);
+                }
+                BossTarget::Hire(id) => {
+                    self.boss.timer = 0.0;
+                    events.push(Event::Reset);
+                    events.push(Event::Hire(id));
+                    self.boss.target = BossTarget::Walk(self.boss.position);
+                }
+                BossTarget::Walk(_) => {
+                    let employees: Vec<&Player> = self
+                        .players
+                        .values()
+                        .filter(|player| player.unemployed_time.is_none())
+                        .collect();
+                    let max_employees = Model::MAX_EMPLOYEES.min(self.players.len() / 3).max(1);
+                    if employees.len() < max_employees {
+                        self.boss.target = BossTarget::Hire(
+                            self.players
+                                .values()
+                                .filter(|player| player.unemployed_time.is_some())
+                                .max_by_key(|player| r32(player.unemployed_time.unwrap()))
+                                .unwrap()
+                                .id,
+                        );
+                    } else if self.boss.timer > Boss::FIRE_TIMER
+                        && !employees.is_empty()
+                        && self.players.len() >= 2
+                    {
+                        self.boss.target = BossTarget::Fire(
+                            employees
+                                .into_iter()
+                                .min_by_key(|player| player.score)
+                                .unwrap()
+                                .id,
+                        );
+                    } else {
+                        self.boss.target = BossTarget::Walk(
+                            *self.pathfind_nodes.choose(&mut global_rng()).unwrap(),
+                        );
+                    }
+                }
+            }
         } else {
             let mut used = vec![false; self.pathfind_nodes.len()];
             let mut q = std::collections::BinaryHeap::new();
@@ -411,6 +466,9 @@ impl Model {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Event {
+    Fire(Id),
+    Hire(Id),
+    Reset,
     PlayerJoined(Player),
     PlayerUpdated(Player),
     PlayerLeft(Id),
