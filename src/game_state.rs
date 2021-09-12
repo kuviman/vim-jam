@@ -146,13 +146,13 @@ impl GameState {
         for table in &self.model.tables {
             self.player.collide(table.position, table.radius);
         }
-        for other_player in self.model.players.values() {
-            if other_player.id == self.player.id {
-                continue;
-            }
-            self.player
-                .collide(other_player.position, other_player.radius);
-        }
+        // for other_player in self.model.players.values() {
+        //     if other_player.id == self.player.id {
+        //         continue;
+        //     }
+        //     self.player
+        //         .collide(other_player.position, other_player.radius);
+        // }
         for thing in &self.model.kitchen {
             self.player.collide(thing.position, thing.radius);
         }
