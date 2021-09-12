@@ -128,7 +128,7 @@ fn main() {
         } else {
             None
         };
-        let geng = Geng::new("VimJam 2 - Office Royal by kuviman");
+        let geng = Geng::new("VimJam 2 - Pizza Royal by kuviman");
         let assets = <Assets as geng::LoadAsset>::load(&geng, ".");
         geng::run(
             &geng,
