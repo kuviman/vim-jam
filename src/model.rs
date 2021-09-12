@@ -28,6 +28,7 @@ impl IdGen {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub id: Id,
+    pub radius: f32,
     pub position: Vec2<f32>,
     pub velocity: Vec2<f32>,
     pub target_velocity: Vec2<f32>,
@@ -39,6 +40,7 @@ impl Player {
     pub fn new(id_gen: &mut IdGen) -> Self {
         let mut player = Self {
             id: id_gen.gen(),
+            radius: 0.5,
             position: vec2(0.0, 0.0),
             velocity: vec2(0.0, 0.0),
             target_velocity: vec2(0.0, 0.0),
@@ -50,6 +52,24 @@ impl Player {
             .clamp(Self::ACCELERATION * delta_time);
         self.position += self.velocity * delta_time;
     }
+
+    pub fn collide(&mut self, position: Vec2<f32>, radius: f32) {
+        let distance = (self.position - position).len();
+        if distance > 0.0001 && distance < radius + self.radius {
+            self.position +=
+                (self.position - position).normalize() * (radius + self.radius - distance);
+        }
+    }
+}
+
+pub type Order = ();
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Table {
+    pub position: Vec2<f32>,
+    pub radius: f32,
+    pub person: Option<Id>,
+    pub order: Option<Order>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,6 +77,7 @@ pub struct Model {
     id_gen: IdGen,
     pub ticks_per_second: f64,
     pub players: HashMap<Id, Player>,
+    pub tables: Vec<Table>,
 }
 
 impl Model {
@@ -65,6 +86,20 @@ impl Model {
             id_gen: IdGen::new(),
             ticks_per_second: 20.0,
             players: default(),
+            tables: {
+                let mut tables = Vec::new();
+                for x in -2..=2 {
+                    for y in -2..0 {
+                        tables.push(Table {
+                            position: vec2(x as f32, y as f32) * 5.0,
+                            radius: 1.0,
+                            person: None,
+                            order: None,
+                        })
+                    }
+                }
+                tables
+            },
         };
         model
     }

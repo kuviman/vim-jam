@@ -77,18 +77,28 @@ impl GameState {
             framebuffer,
             &self.camera,
             player.position,
-            0.5,
+            player.radius,
             Color::WHITE,
         );
     }
 
     fn draw_impl(&mut self, framebuffer: &mut ugli::Framebuffer) {
         ugli::clear(framebuffer, Some(Color::rgb(0.05, 0.05, 0.2)), None);
+        self.camera.center = self.player.position;
         self.draw_player(framebuffer, &self.player);
         for player in self.model.players.values() {
             if player.id != self.player.id {
                 self.draw_player(framebuffer, player);
             }
+        }
+        for table in &self.model.tables {
+            self.geng.draw_2d().circle(
+                framebuffer,
+                &self.camera,
+                table.position,
+                table.radius,
+                Color::GRAY,
+            );
         }
     }
     fn update_player(&mut self, delta_time: f32) {
@@ -113,7 +123,20 @@ impl GameState {
         {
             self.player.target_velocity.y -= 1.0;
         }
+        if self.player.target_velocity.len() > 0.1 {
+            self.player.target_velocity = self.player.target_velocity.normalize();
+        }
         self.player.update(delta_time);
+        for table in &self.model.tables {
+            self.player.collide(table.position, table.radius);
+        }
+        for other_player in self.model.players.values() {
+            if other_player.id == self.player.id {
+                continue;
+            }
+            self.player
+                .collide(other_player.position, other_player.radius);
+        }
     }
 }
 
@@ -166,10 +189,10 @@ impl geng::State for GameState {
             }
         }
         let delta_time = delta_time as f32;
-        self.update_player(delta_time);
         for player in self.model.players.values_mut() {
             player.update(delta_time);
         }
+        self.update_player(delta_time);
 
         for player in self.model.players.values() {
             if player.id == self.player.id {
