@@ -426,9 +426,9 @@ impl geng::State for GameState {
             }
         }
         let delta_time = delta_time as f32;
-        for player in self.model.players.values_mut() {
-            player.update(delta_time);
-        }
+        // for player in self.model.players.values_mut() {
+        //     player.update(delta_time);
+        // }
         self.update_player(delta_time);
 
         for player in self.model.players.values() {
