@@ -81,6 +81,7 @@ pub enum Ingredient {
 pub enum KitchenThingType {
     Oven,
     Dough,
+    TrashCan,
     IngredientBox(Ingredient),
     Plates,
 }
@@ -130,6 +131,11 @@ impl Model {
                 KitchenThing {
                     typ: KitchenThingType::Dough,
                     position: vec2(-10.0, 5.0),
+                    radius: 0.7,
+                },
+                KitchenThing {
+                    typ: KitchenThingType::TrashCan,
+                    position: vec2(10.0, 5.0),
                     radius: 0.7,
                 },
                 KitchenThing {

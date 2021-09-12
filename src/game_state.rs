@@ -109,7 +109,8 @@ impl GameState {
                 match &thing.typ {
                     KitchenThingType::Oven => Color::RED,
                     KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
-                    KitchenThingType::Plates => Color::GRAY,
+                    KitchenThingType::TrashCan => Color::GRAY,
+                    KitchenThingType::Plates => Color::rgb(0.8, 0.8, 0.8),
                     KitchenThingType::IngredientBox(ingredient) => match ingredient {
                         Ingredient::Cheese => Color::YELLOW,
                     },
