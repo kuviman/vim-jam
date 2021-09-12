@@ -1,14 +1,10 @@
 use super::*;
 
-struct PlayerState {
-    step_animation: f32,
-}
+struct PlayerState {}
 
 impl PlayerState {
     pub fn new() -> Self {
-        Self {
-            step_animation: 0.0,
-        }
+        Self {}
     }
     pub fn update(&mut self, player: &Player, delta_time: f32) {}
 }
@@ -219,18 +215,32 @@ impl GameState {
                 }
             }
         }
+
+        self.geng.draw_2d().circle(
+            framebuffer,
+            &self.camera,
+            self.model.boss.position,
+            self.model.boss.size,
+            Color::MAGENTA,
+        );
+
+        // for &node in &self.model.pathfind_nodes {
+        //     self.geng
+        //         .draw_2d()
+        //         .circle(framebuffer, &self.camera, node, 0.1, Color::GRAY);
+        // }
     }
     fn update_player(&mut self, delta_time: f32) {
         if let Some(time) = &mut self.player.unemployed_time {
             *time += delta_time;
         }
+        self.player.target_velocity = vec2(0.0, 0.0);
         match self.player.seat {
             Some(seat_index) => {
                 self.player.velocity = vec2(0.0, 0.0);
                 self.player.position = self.model.seats[seat_index].position;
             }
             None => {
-                self.player.target_velocity = vec2(0.0, 0.0);
                 if self.geng.window().is_key_pressed(geng::Key::A)
                     || self.geng.window().is_key_pressed(geng::Key::Left)
                 {
