@@ -120,7 +120,6 @@ impl GameState {
                     KitchenThingType::Oven => Color::RED,
                     KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
                     KitchenThingType::TrashCan => Color::GRAY,
-                    KitchenThingType::Plates => Color::rgb(0.8, 0.8, 0.8),
                     KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
                 },
             );
@@ -156,7 +155,7 @@ impl GameState {
             if self.player.collide(table.position, table.radius) {
                 if let Some(order) = &table.order {
                     if let Some(pizza) = &self.player.pizza {
-                        if pizza.state == PizzaState::Plated {
+                        if pizza.state == PizzaState::Cooked {
                             if order == &pizza.ingredients {
                                 // TODO: add score
                                 self.player.pizza = None;
@@ -200,13 +199,6 @@ impl GameState {
                             }
                         }
                     }
-                    KitchenThingType::Plates => {
-                        if let Some(pizza) = &mut self.player.pizza {
-                            if pizza.state == PizzaState::Cooked {
-                                pizza.state = PizzaState::Plated;
-                            }
-                        }
-                    }
                     KitchenThingType::TrashCan => {
                         self.player.pizza = None;
                     }
@@ -224,7 +216,6 @@ impl GameState {
             match pizza.state {
                 PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
                 PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
-                PizzaState::Plated => Color::rgb(0.5, 0.5, 0.4),
             },
         );
         self.draw_ingredients(framebuffer, &pizza.ingredients, position + vec2(0.0, 0.3));

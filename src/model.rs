@@ -29,7 +29,6 @@ impl IdGen {
 pub enum PizzaState {
     Raw,
     Cooked,
-    Plated,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -49,8 +48,8 @@ pub struct Player {
 }
 
 impl Player {
-    pub const SPEED: f32 = 4.0;
-    pub const ACCELERATION: f32 = 30.0;
+    pub const SPEED: f32 = 6.0;
+    pub const ACCELERATION: f32 = 50.0;
     pub fn new(id_gen: &mut IdGen) -> Self {
         let mut player = Self {
             id: id_gen.gen(),
@@ -118,7 +117,6 @@ pub enum KitchenThingType {
     Dough,
     TrashCan,
     IngredientBox(Ingredient),
-    Plates,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -162,23 +160,18 @@ impl Model {
             kitchen: {
                 let mut things = vec![
                     KitchenThing {
-                        typ: KitchenThingType::Oven,
-                        position: vec2(-10.0, 2.0),
-                        radius: 1.0,
-                    },
-                    KitchenThing {
                         typ: KitchenThingType::Dough,
-                        position: vec2(-10.0, 5.0),
-                        radius: 0.7,
+                        position: vec2(-2.0, 2.0),
+                        radius: 0.8,
                     },
                     KitchenThing {
                         typ: KitchenThingType::TrashCan,
-                        position: vec2(10.0, 5.0),
+                        position: vec2(7.0, 5.0),
                         radius: 0.7,
                     },
                     KitchenThing {
-                        typ: KitchenThingType::Plates,
-                        position: vec2(10.0, 2.0),
+                        typ: KitchenThingType::Oven,
+                        position: vec2(7.0, 2.0),
                         radius: 1.0,
                     },
                 ];
