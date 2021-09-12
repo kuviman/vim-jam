@@ -85,6 +85,12 @@ pub type Order = HashSet<Ingredient>;
 pub struct Table {
     pub position: Vec2<f32>,
     pub radius: f32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Seat {
+    pub position: Vec2<f32>,
+    pub radius: f32,
     pub person: Option<Id>,
     pub order: Option<Order>,
 }
@@ -133,30 +139,44 @@ pub struct Model {
     pub next_order: f32,
     pub players: HashMap<Id, Player>,
     pub tables: Vec<Table>,
+    pub seats: Vec<Seat>,
     pub kitchen: Vec<KitchenThing>,
 }
 
 impl Model {
     pub fn new() -> Self {
+        let mut tables = Vec::new();
+        let mut seats = Vec::new();
+        for x in -2..=2 {
+            for y in -2..0 {
+                let table_pos = vec2(x as f32, y as f32) * 5.0;
+                let table_radius = 1.0;
+                tables.push(Table {
+                    position: table_pos,
+                    radius: table_radius,
+                });
+                const SEATS: usize = 6;
+                for i in 0..SEATS {
+                    seats.push(Seat {
+                        position: table_pos
+                            + Vec2::rotated(
+                                vec2(table_radius + 0.1, 0.0),
+                                2.0 * f32::PI * i as f32 / SEATS as f32,
+                            ),
+                        radius: 0.4,
+                        person: None,
+                        order: None,
+                    });
+                }
+            }
+        }
         let mut model = Self {
             id_gen: IdGen::new(),
             ticks_per_second: 20.0,
             next_order: 0.0,
             players: default(),
-            tables: {
-                let mut tables = Vec::new();
-                for x in -2..=2 {
-                    for y in -2..0 {
-                        tables.push(Table {
-                            position: vec2(x as f32, y as f32) * 5.0,
-                            radius: 1.0,
-                            person: None,
-                            order: None,
-                        })
-                    }
-                }
-                tables
-            },
+            tables,
+            seats,
             kitchen: {
                 let mut things = vec![
                     KitchenThing {
@@ -235,14 +255,14 @@ impl Model {
         self.next_order -= 1.0 / self.ticks_per_second as f32;
         while self.next_order < 0.0 {
             self.next_order += 5.0;
-            if let Some((table_index, table)) = self
-                .tables
+            if let Some((seat_index, seat)) = self
+                .seats
                 .iter_mut()
                 .enumerate()
-                .filter(|(_, table)| table.order.is_none())
+                .filter(|(_, seat)| seat.order.is_none())
                 .choose(&mut global_rng())
             {
-                table.order = Some({
+                seat.order = Some({
                     let mut ingredients = HashSet::new();
                     for ingredient in Ingredient::all() {
                         if global_rng().gen_bool(0.5) {
@@ -251,7 +271,7 @@ impl Model {
                     }
                     ingredients
                 });
-                events.push(Event::Order(table_index, table.order.clone()));
+                events.push(Event::Order(seat_index, seat.order.clone()));
             }
         }
         events
@@ -268,8 +288,8 @@ impl Model {
             Event::PlayerLeft(player_id) => {
                 self.players.remove(&player_id);
             }
-            Event::Order(table_index, order) => {
-                self.tables[table_index].order = order;
+            Event::Order(seat_index, order) => {
+                self.seats[seat_index].order = order;
             }
             _ => {}
         }

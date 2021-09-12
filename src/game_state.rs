@@ -98,18 +98,32 @@ impl GameState {
                 self.draw_player(framebuffer, player);
             }
         }
+        for seat in &self.model.seats {
+            self.geng.draw_2d().circle(
+                framebuffer,
+                &self.camera,
+                seat.position,
+                seat.radius,
+                Color::GRAY,
+            );
+        }
+
         for table in &self.model.tables {
             self.geng.draw_2d().circle(
                 framebuffer,
                 &self.camera,
                 table.position,
                 table.radius,
-                Color::GRAY,
+                Color::rgb(0.6, 0.6, 0.6),
             );
-            if let Some(order) = &table.order {
-                self.draw_ingredients(framebuffer, order, table.position);
+        }
+
+        for seat in &self.model.seats {
+            if let Some(order) = &seat.order {
+                self.draw_ingredients(framebuffer, order, seat.position);
             }
         }
+
         for thing in &self.model.kitchen {
             self.geng.draw_2d().circle(
                 framebuffer,
@@ -151,21 +165,24 @@ impl GameState {
             self.player.target_velocity = self.player.target_velocity.normalize();
         }
         self.player.update(delta_time);
-        for (table_index, table) in self.model.tables.iter().enumerate() {
-            if self.player.collide(table.position, table.radius) {
-                if let Some(order) = &table.order {
+        for (seat_index, seat) in self.model.seats.iter().enumerate() {
+            if self.player.collide(seat.position, seat.radius) {
+                if let Some(order) = &seat.order {
                     if let Some(pizza) = &self.player.pizza {
                         if pizza.state == PizzaState::Cooked {
                             if order == &pizza.ingredients {
                                 // TODO: add score
                                 self.player.pizza = None;
                                 self.to_send
-                                    .push(ClientMessage::Event(Event::Order(table_index, None)));
+                                    .push(ClientMessage::Event(Event::Order(seat_index, None)));
                             }
                         }
                     }
                 }
             }
+        }
+        for table in &self.model.tables {
+            self.player.collide(table.position, table.radius);
         }
         // for other_player in self.model.players.values() {
         //     if other_player.id == self.player.id {
