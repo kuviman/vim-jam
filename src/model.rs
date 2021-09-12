@@ -33,7 +33,7 @@ pub enum PizzaState {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Pizza {
-    pub ingredients: HashSet<Ingredient>,
+    pub ingredients: BTreeSet<Ingredient>,
     pub state: PizzaState,
 }
 
@@ -45,6 +45,8 @@ pub struct Player {
     pub velocity: Vec2<f32>,
     pub target_velocity: Vec2<f32>,
     pub pizza: Option<Pizza>,
+    pub unemployed_time: Option<f32>,
+    pub seat: Option<usize>,
 }
 
 impl Player {
@@ -58,6 +60,8 @@ impl Player {
             velocity: vec2(0.0, 0.0),
             target_velocity: vec2(0.0, 0.0),
             pizza: None,
+            unemployed_time: Some(0.0),
+            seat: None,
         };
         player
     }
@@ -79,7 +83,7 @@ impl Player {
     }
 }
 
-pub type Order = HashSet<Ingredient>;
+pub type Order = BTreeSet<Ingredient>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Table {
@@ -90,12 +94,13 @@ pub struct Table {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Seat {
     pub position: Vec2<f32>,
+    pub leave_position: Vec2<f32>,
     pub radius: f32,
     pub person: Option<Id>,
     pub order: Option<Order>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Ord, PartialOrd, Debug, Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum Ingredient {
     Cheese,
     Tomato,
@@ -136,7 +141,6 @@ pub struct KitchenThing {
 pub struct Model {
     id_gen: IdGen,
     pub ticks_per_second: f64,
-    pub next_order: f32,
     pub players: HashMap<Id, Player>,
     pub tables: Vec<Table>,
     pub seats: Vec<Seat>,
@@ -163,6 +167,11 @@ impl Model {
                                 vec2(table_radius + 0.1, 0.0),
                                 2.0 * f32::PI * i as f32 / SEATS as f32,
                             ),
+                        leave_position: table_pos
+                            + Vec2::rotated(
+                                vec2(table_radius + 0.1 + 0.4 + 0.5 + 0.15, 0.0),
+                                2.0 * f32::PI * i as f32 / SEATS as f32,
+                            ),
                         radius: 0.4,
                         person: None,
                         order: None,
@@ -173,7 +182,6 @@ impl Model {
         let mut model = Self {
             id_gen: IdGen::new(),
             ticks_per_second: 20.0,
-            next_order: 0.0,
             players: default(),
             tables,
             seats,
@@ -252,28 +260,6 @@ impl Model {
     #[must_use]
     pub fn tick(&mut self) -> Vec<Event> {
         let mut events = Vec::new();
-        self.next_order -= 1.0 / self.ticks_per_second as f32;
-        while self.next_order < 0.0 {
-            self.next_order += 5.0;
-            if let Some((seat_index, seat)) = self
-                .seats
-                .iter_mut()
-                .enumerate()
-                .filter(|(_, seat)| seat.order.is_none())
-                .choose(&mut global_rng())
-            {
-                seat.order = Some({
-                    let mut ingredients = HashSet::new();
-                    for ingredient in Ingredient::all() {
-                        if global_rng().gen_bool(0.5) {
-                            ingredients.insert(ingredient);
-                        }
-                    }
-                    ingredients
-                });
-                events.push(Event::Order(seat_index, seat.order.clone()));
-            }
-        }
         events
     }
     pub fn handle(&mut self, event: Event) {
