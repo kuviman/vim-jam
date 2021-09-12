@@ -80,7 +80,7 @@ impl Player {
     }
 }
 
-pub type Order = ();
+pub type Order = HashSet<Ingredient>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Table {
@@ -132,6 +132,7 @@ pub struct KitchenThing {
 pub struct Model {
     id_gen: IdGen,
     pub ticks_per_second: f64,
+    pub next_order: f32,
     pub players: HashMap<Id, Player>,
     pub tables: Vec<Table>,
     pub kitchen: Vec<KitchenThing>,
@@ -142,6 +143,7 @@ impl Model {
         let mut model = Self {
             id_gen: IdGen::new(),
             ticks_per_second: 20.0,
+            next_order: 0.0,
             players: default(),
             tables: {
                 let mut tables = Vec::new();
@@ -237,6 +239,28 @@ impl Model {
     #[must_use]
     pub fn tick(&mut self) -> Vec<Event> {
         let mut events = Vec::new();
+        self.next_order -= 1.0 / self.ticks_per_second as f32;
+        while self.next_order < 0.0 {
+            self.next_order += 5.0;
+            if let Some((table_index, table)) = self
+                .tables
+                .iter_mut()
+                .enumerate()
+                .filter(|(_, table)| table.order.is_none())
+                .choose(&mut global_rng())
+            {
+                table.order = Some({
+                    let mut ingredients = HashSet::new();
+                    for ingredient in Ingredient::all() {
+                        if global_rng().gen_bool(0.5) {
+                            ingredients.insert(ingredient);
+                        }
+                    }
+                    ingredients
+                });
+                events.push(Event::Order(table_index, table.order.clone()));
+            }
+        }
         events
     }
     pub fn handle(&mut self, event: Event) {
@@ -251,6 +275,9 @@ impl Model {
             Event::PlayerLeft(player_id) => {
                 self.players.remove(&player_id);
             }
+            Event::Order(table_index, order) => {
+                self.tables[table_index].order = order;
+            }
             _ => {}
         }
     }
@@ -261,4 +288,5 @@ pub enum Event {
     PlayerJoined(Player),
     PlayerUpdated(Player),
     PlayerLeft(Id),
+    Order(usize, Option<Order>),
 }

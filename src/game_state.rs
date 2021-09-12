@@ -106,6 +106,9 @@ impl GameState {
                 table.radius,
                 Color::GRAY,
             );
+            if let Some(order) = &table.order {
+                self.draw_ingredients(framebuffer, order, table.position);
+            }
         }
         for thing in &self.model.kitchen {
             self.geng.draw_2d().circle(
@@ -149,8 +152,21 @@ impl GameState {
             self.player.target_velocity = self.player.target_velocity.normalize();
         }
         self.player.update(delta_time);
-        for table in &self.model.tables {
-            self.player.collide(table.position, table.radius);
+        for (table_index, table) in self.model.tables.iter().enumerate() {
+            if self.player.collide(table.position, table.radius) {
+                if let Some(order) = &table.order {
+                    if let Some(pizza) = &self.player.pizza {
+                        if pizza.state == PizzaState::Plated {
+                            if order == &pizza.ingredients {
+                                // TODO: add score
+                                self.player.pizza = None;
+                                self.to_send
+                                    .push(ClientMessage::Event(Event::Order(table_index, None)));
+                            }
+                        }
+                    }
+                }
+            }
         }
         // for other_player in self.model.players.values() {
         //     if other_player.id == self.player.id {
