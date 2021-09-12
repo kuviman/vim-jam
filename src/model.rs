@@ -156,7 +156,7 @@ pub struct Boss {
 impl Boss {
     const WALK_SPEED: f32 = 4.0;
     const RUN_SPEED: f32 = 10.0;
-    const FIRE_TIMER: f32 = 60.0;
+    const FIRE_TIMER: f32 = 30.0;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
