@@ -354,12 +354,14 @@ impl Model {
                     self.boss.timer = 0.0;
                     events.push(Event::Reset);
                     events.push(Event::Fire(id));
+                    self.handle(Event::Fire(id));
                     self.boss.target = BossTarget::Walk(self.boss.position);
                 }
                 BossTarget::Hire(id) => {
                     self.boss.timer = 0.0;
                     events.push(Event::Reset);
                     events.push(Event::Hire(id));
+                    self.handle(Event::Hire(id));
                     self.boss.target = BossTarget::Walk(self.boss.position);
                 }
                 BossTarget::Walk(_) => {
@@ -449,6 +451,16 @@ impl Model {
             }
             Event::BossUpdate(boss) => {
                 self.boss = boss;
+            }
+            Event::Fire(id) => {
+                if let Some(player) = self.players.get_mut(&id) {
+                    player.unemployed_time = Some(0.0);
+                }
+            }
+            Event::Hire(id) => {
+                if let Some(player) = self.players.get_mut(&id) {
+                    player.unemployed_time = None;
+                }
             }
             _ => {}
         }
