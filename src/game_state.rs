@@ -224,6 +224,18 @@ impl GameState {
             Color::MAGENTA,
         );
 
+        self.assets.font.draw(
+            framebuffer,
+            &geng::PixelPerfectCamera,
+            &format!(
+                "Next firing: {:.0}s",
+                (Boss::FIRE_TIMER - self.model.boss.timer).max(0.0)
+            ),
+            vec2(10.0, 10.0),
+            48.0,
+            Color::WHITE,
+        );
+
         // for &node in &self.model.pathfind_nodes {
         //     self.geng
         //         .draw_2d()
