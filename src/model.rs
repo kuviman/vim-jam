@@ -93,12 +93,21 @@ pub struct Table {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum Ingredient {
     Cheese,
+    Tomato,
+    Cucumber,
+    Pepperoni,
 }
 
 impl Ingredient {
+    pub fn all() -> Vec<Self> {
+        vec![Self::Cheese, Self::Tomato, Self::Cucumber, Self::Pepperoni]
+    }
     pub fn color(self) -> Color<f32> {
         match self {
             Self::Cheese => Color::YELLOW,
+            Self::Tomato => Color::RED,
+            Self::Cucumber => Color::GREEN,
+            Self::Pepperoni => Color::rgb(1.0, 0.5, 0.0),
         }
     }
 }
@@ -148,33 +157,40 @@ impl Model {
                 }
                 tables
             },
-            kitchen: vec![
-                KitchenThing {
-                    typ: KitchenThingType::Oven,
-                    position: vec2(-10.0, 2.0),
-                    radius: 1.0,
-                },
-                KitchenThing {
-                    typ: KitchenThingType::Dough,
-                    position: vec2(-10.0, 5.0),
-                    radius: 0.7,
-                },
-                KitchenThing {
-                    typ: KitchenThingType::TrashCan,
-                    position: vec2(10.0, 5.0),
-                    radius: 0.7,
-                },
-                KitchenThing {
-                    typ: KitchenThingType::Plates,
-                    position: vec2(10.0, 2.0),
-                    radius: 1.0,
-                },
-                KitchenThing {
-                    typ: KitchenThingType::IngredientBox(Ingredient::Cheese),
-                    position: vec2(0.0, 5.0),
-                    radius: 0.7,
-                },
-            ],
+            kitchen: {
+                let mut things = vec![
+                    KitchenThing {
+                        typ: KitchenThingType::Oven,
+                        position: vec2(-10.0, 2.0),
+                        radius: 1.0,
+                    },
+                    KitchenThing {
+                        typ: KitchenThingType::Dough,
+                        position: vec2(-10.0, 5.0),
+                        radius: 0.7,
+                    },
+                    KitchenThing {
+                        typ: KitchenThingType::TrashCan,
+                        position: vec2(10.0, 5.0),
+                        radius: 0.7,
+                    },
+                    KitchenThing {
+                        typ: KitchenThingType::Plates,
+                        position: vec2(10.0, 2.0),
+                        radius: 1.0,
+                    },
+                ];
+                let mut x = 0.0;
+                for ingredient in Ingredient::all() {
+                    things.push(KitchenThing {
+                        typ: KitchenThingType::IngredientBox(ingredient),
+                        position: vec2(x, 5.0),
+                        radius: 0.7,
+                    });
+                    x += 1.5;
+                }
+                things
+            },
         };
         model
     }
