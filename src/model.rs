@@ -73,11 +73,31 @@ pub struct Table {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum Ingredient {
+    Cheese,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum KitchenThingType {
+    Oven,
+    IngredientBox(Ingredient),
+    Plates,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct KitchenThing {
+    pub position: Vec2<f32>,
+    pub radius: f32,
+    pub typ: KitchenThingType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Model {
     id_gen: IdGen,
     pub ticks_per_second: f64,
     pub players: HashMap<Id, Player>,
     pub tables: Vec<Table>,
+    pub kitchen: Vec<KitchenThing>,
 }
 
 impl Model {
@@ -100,6 +120,23 @@ impl Model {
                 }
                 tables
             },
+            kitchen: vec![
+                KitchenThing {
+                    typ: KitchenThingType::Oven,
+                    position: vec2(-10.0, 2.0),
+                    radius: 1.0,
+                },
+                KitchenThing {
+                    typ: KitchenThingType::Plates,
+                    position: vec2(10.0, 2.0),
+                    radius: 1.0,
+                },
+                KitchenThing {
+                    typ: KitchenThingType::IngredientBox(Ingredient::Cheese),
+                    position: vec2(0.0, 5.0),
+                    radius: 0.7,
+                },
+            ],
         };
         model
     }

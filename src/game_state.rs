@@ -100,6 +100,21 @@ impl GameState {
                 Color::GRAY,
             );
         }
+        for thing in &self.model.kitchen {
+            self.geng.draw_2d().circle(
+                framebuffer,
+                &self.camera,
+                thing.position,
+                thing.radius,
+                match &thing.typ {
+                    KitchenThingType::Oven => Color::RED,
+                    KitchenThingType::Plates => Color::GRAY,
+                    KitchenThingType::IngredientBox(ingredient) => match ingredient {
+                        Ingredient::Cheese => Color::YELLOW,
+                    },
+                },
+            );
+        }
     }
     fn update_player(&mut self, delta_time: f32) {
         self.player.target_velocity = vec2(0.0, 0.0);
@@ -136,6 +151,9 @@ impl GameState {
             }
             self.player
                 .collide(other_player.position, other_player.radius);
+        }
+        for thing in &self.model.kitchen {
+            self.player.collide(thing.position, thing.radius);
         }
     }
 }
