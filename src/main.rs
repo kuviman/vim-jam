@@ -81,6 +81,21 @@ pub struct Assets {
     pub font: Rc<Font>,
     pub table: ugli::Texture,
     pub stool: ugli::Texture,
+    pub tomato: ugli::Texture,
+    pub cucumber: ugli::Texture,
+    pub pepperoni: ugli::Texture,
+    pub cheese: ugli::Texture,
+}
+
+impl Assets {
+    fn texture_for(&self, ingredient: Ingredient) -> &ugli::Texture {
+        match ingredient {
+            Ingredient::Cheese => &self.cheese,
+            Ingredient::Tomato => &self.tomato,
+            Ingredient::Cucumber => &self.cucumber,
+            Ingredient::Pepperoni => &self.pepperoni,
+        }
+    }
 }
 
 #[derive(Clap)]

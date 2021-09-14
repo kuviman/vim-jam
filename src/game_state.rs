@@ -15,15 +15,6 @@ enum ButtonType {
     ToggleIngredient(Ingredient),
 }
 
-impl ButtonType {
-    fn color(self) -> Color<f32> {
-        match self {
-            Self::MakeOrder => Color::WHITE,
-            Self::ToggleIngredient(ingredient) => ingredient.color(),
-        }
-    }
-}
-
 struct Button {
     position: Vec2<f32>,
     radius: f32,
@@ -182,18 +173,22 @@ impl GameState {
         }
 
         for thing in &self.model.kitchen {
-            self.geng.draw_2d().circle(
-                framebuffer,
-                &self.camera,
-                thing.position,
-                thing.radius,
-                match thing.typ {
-                    KitchenThingType::Oven => Color::RED,
-                    KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
-                    KitchenThingType::TrashCan => Color::GRAY,
-                    KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
-                },
-            );
+            if let KitchenThingType::IngredientBox(ingredient) = thing.typ {
+                self.draw_ingredient(framebuffer, ingredient, thing.position, thing.radius);
+            } else {
+                self.geng.draw_2d().circle(
+                    framebuffer,
+                    &self.camera,
+                    thing.position,
+                    thing.radius,
+                    match thing.typ {
+                        KitchenThingType::Oven => Color::RED,
+                        KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
+                        KitchenThingType::TrashCan => Color::GRAY,
+                        _ => unreachable!(), // KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
+                    },
+                );
+            }
         }
 
         if let Some(seat_index) = self.player.seat {
@@ -211,13 +206,25 @@ impl GameState {
                             );
                         }
                     }
-                    self.geng.draw_2d().circle(
-                        framebuffer,
-                        &self.camera,
-                        button.position,
-                        button.radius,
-                        button.typ.color(),
-                    );
+                    match button.typ {
+                        ButtonType::MakeOrder => {
+                            self.geng.draw_2d().circle(
+                                framebuffer,
+                                &self.camera,
+                                button.position,
+                                button.radius,
+                                Color::WHITE,
+                            );
+                        }
+                        ButtonType::ToggleIngredient(ingredient) => {
+                            self.draw_ingredient(
+                                framebuffer,
+                                ingredient,
+                                button.position,
+                                button.radius,
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -383,12 +390,11 @@ impl GameState {
         position: Vec2<f32>,
     ) {
         for (index, &ingredient) in ingredients.iter().enumerate() {
-            self.geng.draw_2d().circle(
+            self.draw_ingredient(
                 framebuffer,
-                &self.camera,
-                position + vec2(0.2 * index as f32, 0.0),
-                0.1,
-                ingredient.color(),
+                ingredient,
+                position + vec2(0.4 * index as f32, 0.0),
+                0.2,
             );
         }
     }
@@ -406,6 +412,32 @@ impl GameState {
         self.camera.max_vertical_fov +=
             (target_camera_fov - self.camera.max_vertical_fov) * (delta_time * 5.0).min(1.0);
         self.camera.max_horizontal_fov = self.camera.max_vertical_fov;
+    }
+
+    pub(crate) fn draw_ingredient(
+        &self,
+        framebuffer: &mut ugli::Framebuffer,
+        ingredient: Ingredient,
+        position: Vec2<f32>,
+        radius: f32,
+    ) {
+        self.geng.draw_2d().circle(
+            framebuffer,
+            &self.camera,
+            position,
+            radius,
+            ingredient.color(),
+        );
+        self.geng.draw_2d().textured_quad(
+            framebuffer,
+            &self.camera,
+            AABB::pos_size(
+                position - vec2(radius, radius) * 0.8,
+                vec2(radius, radius) * 2.0 * 0.8,
+            ),
+            self.assets.texture_for(ingredient),
+            Color::WHITE,
+        );
     }
 }
 
