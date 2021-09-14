@@ -188,17 +188,21 @@ impl Model {
                 const SEATS: usize = 6;
                 for i in 0..SEATS {
                     seats.push(Seat {
-                        position: table_pos
-                            + Vec2::rotated(
-                                vec2(table_radius + 0.1, 0.0),
-                                2.0 * f32::PI * i as f32 / SEATS as f32,
-                            ),
+                        position: table_pos + {
+                            let mut pos = Vec2::rotated(
+                                vec2(table_radius, 0.0),
+                                2.0 * f32::PI * i as f32 / SEATS as f32 + f32::PI / 2.0,
+                            );
+                            pos.x *= 1.1;
+                            pos.y *= 0.8;
+                            pos
+                        },
                         leave_position: table_pos
                             + Vec2::rotated(
                                 vec2(table_radius + 0.1 + 0.4 + 0.5 + 0.15, 0.0),
-                                2.0 * f32::PI * i as f32 / SEATS as f32,
+                                2.0 * f32::PI * i as f32 / SEATS as f32 + f32::PI / 2.0,
                             ),
-                        radius: 0.4,
+                        radius: 0.3,
                         order: None,
                     });
                 }

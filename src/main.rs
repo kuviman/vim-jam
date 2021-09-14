@@ -79,6 +79,8 @@ impl geng::LoadAsset for Font {
 #[derive(geng::Assets)]
 pub struct Assets {
     pub font: Rc<Font>,
+    pub table: ugli::Texture,
+    pub stool: ugli::Texture,
 }
 
 #[derive(Clap)]

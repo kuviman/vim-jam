@@ -150,22 +150,28 @@ impl GameState {
             }
         }
         for seat in &self.model.seats {
-            self.geng.draw_2d().circle(
+            self.geng.draw_2d().textured_quad(
                 framebuffer,
                 &self.camera,
-                seat.position,
-                seat.radius,
-                Color::GRAY,
+                AABB::pos_size(
+                    seat.position - vec2(seat.radius, seat.radius * 1.3),
+                    vec2(seat.radius, seat.radius) * 2.0,
+                ),
+                &self.assets.stool,
+                Color::WHITE,
             );
         }
 
         for table in &self.model.tables {
-            self.geng.draw_2d().circle(
+            self.geng.draw_2d().textured_quad(
                 framebuffer,
                 &self.camera,
-                table.position,
-                table.radius,
-                Color::rgb(0.6, 0.6, 0.6),
+                AABB::pos_size(
+                    table.position - vec2(table.radius, table.radius * 0.9),
+                    vec2(table.radius, table.radius) * 2.0,
+                ),
+                &self.assets.table,
+                Color::WHITE,
             );
         }
 
