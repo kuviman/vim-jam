@@ -85,6 +85,12 @@ pub struct Assets {
     pub cucumber: ugli::Texture,
     pub pepperoni: ugli::Texture,
     pub cheese: ugli::Texture,
+    pub trash: ugli::Texture,
+    pub trash_opened: ugli::Texture,
+    pub oven: ugli::Texture,
+    pub oven_opened: ugli::Texture,
+    #[asset(path = "box.png")]
+    pub r#box: ugli::Texture,
 }
 
 impl Assets {

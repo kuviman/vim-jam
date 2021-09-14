@@ -173,21 +173,55 @@ impl GameState {
         }
 
         for thing in &self.model.kitchen {
-            if let KitchenThingType::IngredientBox(ingredient) = thing.typ {
-                self.draw_ingredient(framebuffer, ingredient, thing.position, thing.radius);
-            } else {
-                self.geng.draw_2d().circle(
-                    framebuffer,
-                    &self.camera,
-                    thing.position,
-                    thing.radius,
-                    match thing.typ {
-                        KitchenThingType::Oven => Color::RED,
-                        KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
-                        KitchenThingType::TrashCan => Color::GRAY,
-                        _ => unreachable!(), // KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
-                    },
-                );
+            match thing.typ {
+                KitchenThingType::IngredientBox(ingredient) => {
+                    self.geng.draw_2d().textured_quad(
+                        framebuffer,
+                        &self.camera,
+                        AABB::pos_size(
+                            thing.position - vec2(1.0, 1.0) * thing.radius,
+                            vec2(1.0, 1.0) * thing.radius * 2.0,
+                        ),
+                        &self.assets.r#box,
+                        Color::WHITE,
+                    );
+                    self.draw_ingredient(
+                        framebuffer,
+                        ingredient,
+                        thing.position,
+                        thing.radius * 0.5,
+                    );
+                }
+                KitchenThingType::Dough => {
+                    self.geng.draw_2d().circle(
+                        framebuffer,
+                        &self.camera,
+                        thing.position,
+                        thing.radius,
+                        match thing.typ {
+                            KitchenThingType::Oven => Color::RED,
+                            KitchenThingType::Dough => Color::rgb(1.0, 1.0, 0.5),
+                            KitchenThingType::TrashCan => Color::GRAY,
+                            _ => unreachable!(), // KitchenThingType::IngredientBox(ingredient) => ingredient.color(),
+                        },
+                    );
+                }
+                _ => {
+                    self.geng.draw_2d().textured_quad(
+                        framebuffer,
+                        &self.camera,
+                        AABB::pos_size(
+                            thing.position - vec2(1.0, 1.0) * thing.radius,
+                            vec2(1.0, 1.0) * thing.radius * 2.0,
+                        ),
+                        match thing.typ {
+                            KitchenThingType::Oven => &self.assets.oven,
+                            KitchenThingType::TrashCan => &self.assets.trash,
+                            _ => unreachable!(),
+                        },
+                        Color::WHITE,
+                    );
+                }
             }
         }
 
