@@ -89,6 +89,7 @@ pub struct Assets {
     pub trash_opened: ugli::Texture,
     pub oven: ugli::Texture,
     pub oven_opened: ugli::Texture,
+    pub dough: ugli::Texture,
     #[asset(path = "box.png")]
     pub r#box: ugli::Texture,
 }
