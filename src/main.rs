@@ -92,6 +92,7 @@ pub struct Assets {
     pub dough: ugli::Texture,
     #[asset(path = "box.png")]
     pub r#box: ugli::Texture,
+    pub floor: ugli::Texture,
 }
 
 impl Assets {
@@ -162,6 +163,7 @@ fn main() {
                 let geng = geng.clone();
                 move |assets| {
                     let mut assets = assets.unwrap();
+                    assets.floor.set_wrap_mode(ugli::WrapMode::Repeat);
                     ConnectingState::new(&geng, &Rc::new(assets), &opt, None)
                     // let mut model = Model::new();
                     // let (welcome, _) = model.welcome();

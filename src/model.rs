@@ -71,6 +71,8 @@ impl Player {
         self.velocity += (self.target_velocity * Self::SPEED - self.velocity)
             .clamp(Self::ACCELERATION * delta_time);
         self.position += self.velocity * delta_time;
+        self.position.x = clamp(self.position.x, -14.0..=4.0);
+        self.position.y = clamp(self.position.y, -4.0..=4.0);
     }
 
     pub fn collide(&mut self, position: Vec2<f32>, radius: f32) -> bool {
@@ -125,7 +127,7 @@ impl Ingredient {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum KitchenThingType {
     Oven,
     Dough,
@@ -180,8 +182,8 @@ impl Model {
         let mut tables = Vec::new();
         let mut seats = Vec::new();
         for x in -3..0 {
-            for y in -1..=1 {
-                let table_pos = vec2(x as f32, y as f32) * 4.0;
+            for y in std::array::IntoIter::new([-1, 1]) {
+                let table_pos = vec2(x as f32 * 4.0, y as f32 * 2.0);
                 let table_radius = 1.0;
                 tables.push(Table {
                     position: table_pos,
@@ -244,10 +246,10 @@ impl Model {
         let mut pathfind_edges;
         {
             const STEP: f32 = 0.5;
-            let mut x = -15.0;
-            while x <= 15.0 {
-                let mut y = -15.0;
-                while y <= 7.0 {
+            let mut x = -14.0;
+            while x <= 4.0 {
+                let mut y = -4.0;
+                while y <= 4.0 {
                     let pos = vec2(x, y);
                     let mut good = true;
                     for thing in &kitchen {

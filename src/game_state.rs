@@ -134,13 +134,81 @@ impl GameState {
 
     fn draw_impl(&mut self, framebuffer: &mut ugli::Framebuffer) {
         ugli::clear(framebuffer, Some(Color::rgb(0.9, 0.9, 0.8)), None);
+
+        self.geng.draw_2d().textured(
+            framebuffer,
+            &self.camera,
+            &[
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-1.25, -100.0),
+                    a_pos: vec2(-1.25, -100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-1.25, 100.0),
+                    a_pos: vec2(-1.25, 100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-100.0, 100.0),
+                    a_pos: vec2(-100.0, 100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-100.0, -100.0),
+                    a_pos: vec2(-100.0, -100.0),
+                    a_color: Color::WHITE,
+                },
+            ],
+            &self.assets.floor,
+            Color::rgb(0.9, 0.9, 0.8),
+            ugli::DrawMode::TriangleFan,
+        );
+        self.geng.draw_2d().textured(
+            framebuffer,
+            &self.camera,
+            &[
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-1.25, -100.0),
+                    a_pos: vec2(-1.25, -100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(-1.25, 100.0),
+                    a_pos: vec2(-1.25, 100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(100.0, 100.0),
+                    a_pos: vec2(100.0, 100.0),
+                    a_color: Color::WHITE,
+                },
+                geng::draw_2d::TexturedVertex {
+                    a_vt: vec2(100.0, -100.0),
+                    a_pos: vec2(100.0, -100.0),
+                    a_color: Color::WHITE,
+                },
+            ],
+            &self.assets.floor,
+            Color::rgb(0.9, 0.8, 0.8),
+            ugli::DrawMode::TriangleFan,
+        );
+
         self.draw_player(framebuffer, &self.player);
         for player in self.model.players.values() {
             if player.id != self.player.id {
                 self.draw_player(framebuffer, player);
             }
         }
+
         for seat in &self.model.seats {
+            self.geng.draw_2d().ellipse(
+                framebuffer,
+                &self.camera,
+                seat.position - vec2(0.0, seat.radius),
+                vec2(seat.radius, seat.radius * 0.5) * 0.7,
+                Color::rgba(0.0, 0.0, 0.0, 0.3),
+            );
             self.geng.draw_2d().textured_quad(
                 framebuffer,
                 &self.camera,
@@ -154,6 +222,13 @@ impl GameState {
         }
 
         for table in &self.model.tables {
+            self.geng.draw_2d().ellipse(
+                framebuffer,
+                &self.camera,
+                table.position - vec2(0.0, table.radius * 0.2),
+                vec2(table.radius, table.radius * 0.7),
+                Color::rgba(0.0, 0.0, 0.0, 0.3),
+            );
             self.geng.draw_2d().textured_quad(
                 framebuffer,
                 &self.camera,
@@ -173,6 +248,21 @@ impl GameState {
         }
 
         for thing in &self.model.kitchen {
+            self.geng.draw_2d().ellipse(
+                framebuffer,
+                &self.camera,
+                thing.position
+                    - vec2(
+                        0.0,
+                        if thing.typ == KitchenThingType::Dough {
+                            thing.radius * 0.4
+                        } else {
+                            thing.radius * 0.7
+                        },
+                    ),
+                vec2(thing.radius, thing.radius * 0.5),
+                Color::rgba(0.0, 0.0, 0.0, 0.3),
+            );
             match thing.typ {
                 KitchenThingType::IngredientBox(ingredient) => {
                     self.geng.draw_2d().textured_quad(
@@ -421,10 +511,23 @@ impl GameState {
     }
 
     fn update_camera(&mut self, delta_time: f32) {
-        let mut target_camera_position = vec2(
-            clamp(self.player.position.x, -5.0..=-2.0),
-            clamp(self.player.position.y, -1.0..=1.0),
-        );
+        let mut camera = self.camera.clone();
+        camera.center = self.player.position;
+        let top_right = camera.screen_to_world(self.framebuffer_size, self.framebuffer_size);
+        if top_right.x > 5.0 {
+            camera.center.x -= top_right.x - 5.0;
+        }
+        if top_right.y > 5.0 {
+            camera.center.y -= top_right.y - 5.0;
+        }
+        let bottom_left = camera.screen_to_world(self.framebuffer_size, vec2(0.0, 0.0));
+        if bottom_left.x < -15.0 {
+            camera.center.x += -15.0 - bottom_left.x;
+        }
+        if bottom_left.y < -5.0 {
+            camera.center.y += -5.0 - bottom_left.y;
+        }
+        let mut target_camera_position = camera.center;
         let mut target_camera_fov = 20.0;
         if let Some(seat_index) = self.player.seat {
             if self.model.seats[seat_index].order.is_none() {
@@ -433,9 +536,9 @@ impl GameState {
         }
         self.camera.center +=
             (target_camera_position - self.camera.center) * (delta_time * 5.0).min(1.0);
-        self.camera.max_vertical_fov +=
-            (target_camera_fov - self.camera.max_vertical_fov) * (delta_time * 5.0).min(1.0);
-        self.camera.max_horizontal_fov = self.camera.max_vertical_fov;
+        self.camera.max_horizontal_fov +=
+            (target_camera_fov - self.camera.max_horizontal_fov) * (delta_time * 5.0).min(1.0);
+        self.camera.max_vertical_fov = self.camera.max_horizontal_fov.min(10.0);
     }
 
     pub(crate) fn draw_ingredient(
@@ -445,6 +548,13 @@ impl GameState {
         position: Vec2<f32>,
         radius: f32,
     ) {
+        self.geng.draw_2d().circle(
+            framebuffer,
+            &self.camera,
+            position,
+            radius + 0.03,
+            Color::BLACK,
+        );
         self.geng.draw_2d().circle(
             framebuffer,
             &self.camera,
