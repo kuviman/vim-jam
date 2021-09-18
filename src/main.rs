@@ -93,6 +93,17 @@ pub struct Assets {
     #[asset(path = "box.png")]
     pub r#box: ugli::Texture,
     pub floor: ugli::Texture,
+    pub monke_up: ugli::Texture,
+    pub monke_down: ugli::Texture,
+    pub monke_sit: ugli::Texture,
+    pub monke_up_color: ugli::Texture,
+    pub monke_down_color: ugli::Texture,
+    pub monke_sit_color: ugli::Texture,
+    pub pizza: ugli::Texture,
+    pub raw_pizza: ugli::Texture,
+    pub badge_left: ugli::Texture,
+    pub badge_right: ugli::Texture,
+    pub order: ugli::Texture,
 }
 
 impl Assets {

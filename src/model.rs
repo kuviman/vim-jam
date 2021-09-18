@@ -48,6 +48,9 @@ pub struct Player {
     pub pizza: Option<Pizza>,
     pub unemployed_time: Option<f32>,
     pub seat: Option<usize>,
+    pub color: Color<f32>,
+    pub t: f32,
+    pub left: bool,
 }
 
 impl Player {
@@ -57,6 +60,7 @@ impl Player {
         let mut player = Self {
             id: id_gen.gen(),
             score: 0,
+            t: 0.0,
             radius: 0.5,
             position: vec2(0.0, 0.0),
             velocity: vec2(0.0, 0.0),
@@ -64,15 +68,24 @@ impl Player {
             pizza: None,
             unemployed_time: Some(0.0),
             seat: None,
+            color: hsv(global_rng().gen_range(0.0..=1.0), 1.0, 1.5),
+            left: global_rng().gen_bool(0.5),
         };
         player
     }
     pub fn update(&mut self, delta_time: f32) {
+        self.t += delta_time;
         self.velocity += (self.target_velocity * Self::SPEED - self.velocity)
             .clamp(Self::ACCELERATION * delta_time);
         self.position += self.velocity * delta_time;
         self.position.x = clamp(self.position.x, -14.0..=4.0);
         self.position.y = clamp(self.position.y, -4.0..=4.0);
+        if self.velocity.x > 0.1 {
+            self.left = false;
+        }
+        if self.velocity.x < -0.1 {
+            self.left = true;
+        }
     }
 
     pub fn collide(&mut self, position: Vec2<f32>, radius: f32) -> bool {

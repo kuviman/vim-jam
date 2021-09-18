@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use super::*;
 
 struct PlayerState {}
@@ -80,6 +82,8 @@ impl Drop for GameState {
     }
 }
 
+type RenderQ<'a> = BTreeMap<R32, Vec<Box<dyn Fn(&mut ugli::Framebuffer) + 'a>>>;
+
 impl GameState {
     pub fn new(
         geng: &Geng,
@@ -112,28 +116,104 @@ impl GameState {
         }
     }
 
-    fn draw_player(&self, framebuffer: &mut ugli::Framebuffer, player: &Player) {
-        self.geng.draw_2d().circle(
-            framebuffer,
-            &self.camera,
-            player.position,
-            player.radius,
-            match player.unemployed_time {
-                Some(_) => Color::WHITE,
-                None => Color::rgb(0.7, 0.7, 0.7),
-            },
+    fn draw_player<'a, 'b>(&'a self, renderq: &'b mut RenderQ<'a>, player: &'a Player) {
+        let mut aabb = AABB::pos_size(
+            player.position
+                - vec2(
+                    player.radius,
+                    player.radius
+                        + (player.t * 20.0).sin().abs()
+                            * player.velocity.len().min(1.0)
+                            * player.radius
+                            * 0.2,
+                ),
+            vec2(1.0, 1.0) * player.radius * 2.0,
         );
-        if let Some(pizza) = &player.pizza {
-            self.draw_pizza(
-                framebuffer,
-                pizza,
-                player.position + vec2(0.0, player.radius),
-            );
+        let mut left = player.left;
+        if let Some(seat) = player.seat {
+            let seat = &self.model.seats[seat];
+            left = seat.leave_position.x > seat.position.x;
+            aabb = aabb.translate(vec2(0.0, player.radius));
         }
+        let initial_aabb = aabb;
+        if left {
+            mem::swap(&mut aabb.x_min, &mut aabb.x_max);
+        }
+        let layer = r32(if player.seat.is_some() {
+            player.position.y - 0.3
+        } else {
+            player.position.y
+        });
+        let layer = renderq.entry(layer).or_default();
+        layer.push(Box::new(move |framebuffer| {
+            self.geng.draw_2d().textured_quad(
+                framebuffer,
+                &self.camera,
+                aabb,
+                if player.seat.is_some() {
+                    &self.assets.monke_sit
+                } else if player.pizza.is_some() {
+                    &self.assets.monke_up
+                } else {
+                    &self.assets.monke_down
+                },
+                Color::WHITE,
+            );
+            self.geng.draw_2d().textured_quad(
+                framebuffer,
+                &self.camera,
+                aabb,
+                if player.seat.is_some() {
+                    &self.assets.monke_sit_color
+                } else if player.pizza.is_some() {
+                    &self.assets.monke_up_color
+                } else {
+                    &self.assets.monke_down_color
+                },
+                player.color,
+            );
+            if player.unemployed_time.is_none() {
+                self.geng.draw_2d().textured_quad(
+                    framebuffer,
+                    &self.camera,
+                    initial_aabb,
+                    if left {
+                        &self.assets.badge_left
+                    } else {
+                        &self.assets.badge_right
+                    },
+                    Color::WHITE,
+                );
+            }
+            // self.geng.draw_2d().circle(
+            //     framebuffer,
+            //     &self.camera,
+            //     player.position,
+            //     player.radius,
+            //     match player.unemployed_time {
+            //         Some(_) => Color::WHITE,
+            //         None => Color::rgb(0.7, 0.7, 0.7),
+            //     },
+            // );
+            if let Some(pizza) = &player.pizza {
+                self.geng.draw_2d().textured_quad(
+                    framebuffer,
+                    &self.camera,
+                    initial_aabb.translate(vec2(0.0, self.player.radius)),
+                    match pizza.state {
+                        PizzaState::Cooked => &self.assets.pizza,
+                        PizzaState::Raw => &self.assets.raw_pizza,
+                    },
+                    Color::WHITE,
+                );
+            }
+        }));
     }
 
-    fn draw_impl(&mut self, framebuffer: &mut ugli::Framebuffer) {
+    fn draw_impl(&self, framebuffer: &mut ugli::Framebuffer) {
         ugli::clear(framebuffer, Some(Color::rgb(0.9, 0.9, 0.8)), None);
+
+        let mut renderq = RenderQ::new();
 
         self.geng.draw_2d().textured(
             framebuffer,
@@ -194,10 +274,10 @@ impl GameState {
             ugli::DrawMode::TriangleFan,
         );
 
-        self.draw_player(framebuffer, &self.player);
+        self.draw_player(&mut renderq, &self.player);
         for player in self.model.players.values() {
             if player.id != self.player.id {
-                self.draw_player(framebuffer, player);
+                self.draw_player(&mut renderq, player);
             }
         }
 
@@ -209,16 +289,21 @@ impl GameState {
                 vec2(seat.radius, seat.radius * 0.5) * 0.7,
                 Color::rgba(0.0, 0.0, 0.0, 0.3),
             );
-            self.geng.draw_2d().textured_quad(
-                framebuffer,
-                &self.camera,
-                AABB::pos_size(
-                    seat.position - vec2(seat.radius, seat.radius * 1.3),
-                    vec2(seat.radius, seat.radius) * 2.0,
-                ),
-                &self.assets.stool,
-                seat.color,
-            );
+            renderq
+                .entry(r32(seat.position.y + 0.05))
+                .or_default()
+                .push(Box::new(move |framebuffer| {
+                    self.geng.draw_2d().textured_quad(
+                        framebuffer,
+                        &self.camera,
+                        AABB::pos_size(
+                            seat.position - vec2(seat.radius, seat.radius * 1.3),
+                            vec2(seat.radius, seat.radius) * 2.0,
+                        ),
+                        &self.assets.stool,
+                        seat.color,
+                    );
+                }));
         }
 
         for table in &self.model.tables {
@@ -229,22 +314,21 @@ impl GameState {
                 vec2(table.radius, table.radius * 0.7),
                 Color::rgba(0.0, 0.0, 0.0, 0.3),
             );
-            self.geng.draw_2d().textured_quad(
-                framebuffer,
-                &self.camera,
-                AABB::pos_size(
-                    table.position - vec2(table.radius, table.radius * 0.9),
-                    vec2(table.radius, table.radius) * 2.0,
-                ),
-                &self.assets.table,
-                table.color,
-            );
-        }
-
-        for seat in &self.model.seats {
-            if let Some(order) = &seat.order {
-                self.draw_ingredients(framebuffer, order, seat.position);
-            }
+            renderq
+                .entry(r32(table.position.y - table.radius * 0.5))
+                .or_default()
+                .push(Box::new(move |framebuffer| {
+                    self.geng.draw_2d().textured_quad(
+                        framebuffer,
+                        &self.camera,
+                        AABB::pos_size(
+                            table.position - vec2(table.radius, table.radius * 0.9),
+                            vec2(table.radius, table.radius) * 2.0,
+                        ),
+                        &self.assets.table,
+                        table.color,
+                    );
+                }));
         }
 
         for thing in &self.model.kitchen {
@@ -302,28 +386,49 @@ impl GameState {
             }
         }
 
+        self.geng.draw_2d().circle(
+            framebuffer,
+            &self.camera,
+            self.model.boss.position,
+            self.model.boss.size,
+            Color::MAGENTA,
+        );
+
+        for (_layer, rens) in renderq.into_iter().rev() {
+            for ren in rens {
+                ren(framebuffer);
+            }
+        }
+
+        for seat in &self.model.seats {
+            if let Some(order) = &seat.order {
+                self.draw_ingredients(framebuffer, order, seat.position + vec2(0.0, 1.0));
+            }
+        }
+        for player in self.model.players.values() {
+            if let Some(pizza) = &player.pizza {
+                self.draw_pizza(
+                    framebuffer,
+                    pizza,
+                    player.position + vec2(0.0, player.radius),
+                );
+            }
+        }
+
         if let Some(seat_index) = self.player.seat {
             let seat = &self.model.seats[seat_index];
             if seat.order.is_none() {
                 for button in self.model.buttons_for(seat) {
-                    if let ButtonType::ToggleIngredient(ingredient) = button.typ {
-                        if self.current_order.contains(&ingredient) {
-                            self.geng.draw_2d().circle(
-                                framebuffer,
-                                &self.camera,
-                                button.position,
-                                button.radius + 0.05,
-                                Color::BLACK,
-                            );
-                        }
-                    }
                     match button.typ {
                         ButtonType::MakeOrder => {
-                            self.geng.draw_2d().circle(
+                            self.geng.draw_2d().textured_quad(
                                 framebuffer,
                                 &self.camera,
-                                button.position,
-                                button.radius,
+                                AABB::pos_size(
+                                    button.position - vec2(button.radius, button.radius),
+                                    vec2(1.0, 1.0) * button.radius * 2.0,
+                                ),
+                                &self.assets.order,
                                 Color::WHITE,
                             );
                         }
@@ -336,17 +441,20 @@ impl GameState {
                             );
                         }
                     }
+                    if let ButtonType::ToggleIngredient(ingredient) = button.typ {
+                        if !self.current_order.contains(&ingredient) {
+                            self.geng.draw_2d().circle(
+                                framebuffer,
+                                &self.camera,
+                                button.position,
+                                button.radius,
+                                Color::rgba(0.0, 0.0, 0.0, 0.7),
+                            );
+                        }
+                    }
                 }
             }
         }
-
-        self.geng.draw_2d().circle(
-            framebuffer,
-            &self.camera,
-            self.model.boss.position,
-            self.model.boss.size,
-            Color::MAGENTA,
-        );
 
         self.assets.font.draw(
             framebuffer,
@@ -482,16 +590,16 @@ impl GameState {
     }
 
     fn draw_pizza(&self, framebuffer: &mut ugli::Framebuffer, pizza: &Pizza, position: Vec2<f32>) {
-        self.geng.draw_2d().circle(
-            framebuffer,
-            &self.camera,
-            position,
-            0.3,
-            match pizza.state {
-                PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
-                PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
-            },
-        );
+        // self.geng.draw_2d().circle(
+        //     framebuffer,
+        //     &self.camera,
+        //     position,
+        //     0.3,
+        //     match pizza.state {
+        //         PizzaState::Raw => Color::rgb(1.0, 1.0, 0.7),
+        //         PizzaState::Cooked => Color::rgb(0.7, 0.7, 0.4),
+        //     },
+        // );
         self.draw_ingredients(framebuffer, &pizza.ingredients, position + vec2(0.0, 0.3));
     }
     fn draw_ingredients(
@@ -638,9 +746,9 @@ impl geng::State for GameState {
             }
         }
         let delta_time = delta_time as f32;
-        // for player in self.model.players.values_mut() {
-        //     player.update(delta_time);
-        // }
+        for player in self.model.players.values_mut() {
+            player.update(delta_time);
+        }
         self.update_player(delta_time);
 
         for player in self.model.players.values() {
@@ -707,6 +815,13 @@ impl geng::State for GameState {
                         self.player.position = self.model.seats[seat_index].leave_position;
                         self.to_send
                             .push(ClientMessage::Event(Event::Order(seat_index, None)));
+                    }
+                }
+                geng::Key::T => {
+                    if self.player.unemployed_time.is_none() {
+                        self.player.unemployed_time = Some(0.0);
+                    } else {
+                        self.player.unemployed_time = None;
                     }
                 }
                 _ => {}
