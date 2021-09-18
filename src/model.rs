@@ -177,9 +177,9 @@ impl Model {
     pub fn new() -> Self {
         let mut tables = Vec::new();
         let mut seats = Vec::new();
-        for x in -2..=2 {
-            for y in -2..0 {
-                let table_pos = vec2(x as f32, y as f32) * 5.0;
+        for x in -3..0 {
+            for y in -1..=1 {
+                let table_pos = vec2(x as f32, y as f32) * 4.0;
                 let table_radius = 1.0;
                 tables.push(Table {
                     position: table_pos,
@@ -211,26 +211,26 @@ impl Model {
         let mut kitchen = vec![
             KitchenThing {
                 typ: KitchenThingType::Dough,
-                position: vec2(-2.0, 2.0),
+                position: vec2(0.0, -4.0),
                 radius: 0.8,
             },
             KitchenThing {
                 typ: KitchenThingType::TrashCan,
-                position: vec2(7.0, 5.0),
+                position: vec2(2.5, 4.0),
                 radius: 0.7,
             },
             KitchenThing {
                 typ: KitchenThingType::Oven,
-                position: vec2(7.0, 2.0),
+                position: vec2(0.0, 4.0),
                 radius: 1.0,
             },
         ];
         {
-            let mut x = 0.0;
+            let mut x = -3.0;
             for ingredient in Ingredient::all() {
                 kitchen.push(KitchenThing {
                     typ: KitchenThingType::IngredientBox(ingredient),
-                    position: vec2(x, 5.0),
+                    position: vec2(3.0, x),
                     radius: 0.7,
                 });
                 x += 1.5;

@@ -421,7 +421,10 @@ impl GameState {
     }
 
     fn update_camera(&mut self, delta_time: f32) {
-        let target_camera_position = self.player.position;
+        let mut target_camera_position = vec2(
+            clamp(self.player.position.x, -5.0..=-2.0),
+            clamp(self.player.position.y, -1.0..=1.0),
+        );
         let mut target_camera_fov = 20.0;
         if let Some(seat_index) = self.player.seat {
             if self.model.seats[seat_index].order.is_none() {
