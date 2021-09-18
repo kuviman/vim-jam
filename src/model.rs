@@ -91,6 +91,7 @@ pub type Order = BTreeSet<Ingredient>;
 pub struct Table {
     pub position: Vec2<f32>,
     pub radius: f32,
+    pub color: Color<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -99,6 +100,7 @@ pub struct Seat {
     pub leave_position: Vec2<f32>,
     pub radius: f32,
     pub order: Option<Order>,
+    pub color: Color<f32>,
 }
 
 #[derive(Ord, PartialOrd, Debug, Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq)]
@@ -184,6 +186,7 @@ impl Model {
                 tables.push(Table {
                     position: table_pos,
                     radius: table_radius,
+                    color: hsv(global_rng().gen_range(0.0..=1.0), 0.2, 1.0),
                 });
                 const SEATS: usize = 6;
                 for i in 0..SEATS {
@@ -204,6 +207,7 @@ impl Model {
                             ),
                         radius: 0.3,
                         order: None,
+                        color: hsv(global_rng().gen_range(0.0..=1.0), 0.2, 0.8),
                     });
                 }
             }
@@ -211,17 +215,17 @@ impl Model {
         let mut kitchen = vec![
             KitchenThing {
                 typ: KitchenThingType::Dough,
-                position: vec2(0.0, -4.0),
+                position: vec2(1.0, -4.0),
                 radius: 0.8,
             },
             KitchenThing {
                 typ: KitchenThingType::TrashCan,
-                position: vec2(2.5, 4.0),
+                position: vec2(3.5, 4.0),
                 radius: 0.7,
             },
             KitchenThing {
                 typ: KitchenThingType::Oven,
-                position: vec2(0.0, 4.0),
+                position: vec2(1.0, 4.0),
                 radius: 1.0,
             },
         ];
@@ -230,7 +234,7 @@ impl Model {
             for ingredient in Ingredient::all() {
                 kitchen.push(KitchenThing {
                     typ: KitchenThingType::IngredientBox(ingredient),
-                    position: vec2(3.0, x),
+                    position: vec2(4.0, x),
                     radius: 0.7,
                 });
                 x += 1.5;

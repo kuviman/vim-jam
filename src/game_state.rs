@@ -133,7 +133,7 @@ impl GameState {
     }
 
     fn draw_impl(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        ugli::clear(framebuffer, Some(Color::rgb(0.05, 0.05, 0.2)), None);
+        ugli::clear(framebuffer, Some(Color::rgb(0.9, 0.9, 0.8)), None);
         self.draw_player(framebuffer, &self.player);
         for player in self.model.players.values() {
             if player.id != self.player.id {
@@ -149,7 +149,7 @@ impl GameState {
                     vec2(seat.radius, seat.radius) * 2.0,
                 ),
                 &self.assets.stool,
-                Color::WHITE,
+                seat.color,
             );
         }
 
@@ -162,7 +162,7 @@ impl GameState {
                     vec2(table.radius, table.radius) * 2.0,
                 ),
                 &self.assets.table,
-                Color::WHITE,
+                table.color,
             );
         }
 
