@@ -104,6 +104,7 @@ pub struct Assets {
     pub badge_left: ugli::Texture,
     pub badge_right: ugli::Texture,
     pub order: ugli::Texture,
+    pub boss: ugli::Texture,
 }
 
 impl Assets {

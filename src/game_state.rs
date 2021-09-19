@@ -74,6 +74,9 @@ pub struct GameState {
     transition: Option<geng::Transition>,
     to_send: Vec<ClientMessage>,
     framebuffer_size: Vec2<f32>,
+    boss_position: Vec2<f32>,
+    boss_hop: f32,
+    boss_left: bool,
 }
 
 impl Drop for GameState {
@@ -103,6 +106,9 @@ impl GameState {
             None => welcome.model.players[&welcome.player_id].clone(),
         };
         Self {
+            boss_left: true,
+            boss_hop: 0.0,
+            boss_position: welcome.model.boss.position,
             t: 0.0,
             last_interaction_time: default(),
             current_order: BTreeSet::new(),
@@ -408,14 +414,30 @@ impl GameState {
             }
         }
 
-        self.geng.draw_2d().circle(
-            framebuffer,
-            &self.camera,
-            self.model.boss.position,
-            self.model.boss.size,
-            Color::MAGENTA,
-        );
-
+        renderq
+            .entry(r32(self.boss_position.y))
+            .or_default()
+            .push(Box::new(move |framebuffer| {
+                let radius = 0.8;
+                let mut aabb = AABB::pos_size(
+                    self.boss_position - vec2(radius, radius * 0.9),
+                    vec2(radius, radius) * 2.0,
+                )
+                .translate(vec2(
+                    0.0,
+                    (self.t * 15.0).sin().abs() * self.boss_hop.min(1.0) * 0.1,
+                ));
+                if !self.boss_left {
+                    mem::swap(&mut aabb.x_min, &mut aabb.x_max);
+                }
+                self.geng.draw_2d().textured_quad(
+                    framebuffer,
+                    &self.camera,
+                    aabb,
+                    &self.assets.boss,
+                    Color::WHITE,
+                );
+            }));
         for (_layer, rens) in renderq.into_iter().rev() {
             for ren in rens {
                 ren(framebuffer);
@@ -808,6 +830,13 @@ impl geng::State for GameState {
         self.model
             .players
             .insert(self.player.id, self.player.clone());
+
+        let delta_boss_position =
+            (self.model.boss.position - self.boss_position) * (delta_time * 5.0).min(1.0);
+        self.boss_position += delta_boss_position;
+        let boss_velocity = delta_boss_position / delta_time;
+        self.boss_hop = boss_velocity.len();
+        self.boss_left = boss_velocity.x < 0.0;
     }
     fn handle_event(&mut self, event: geng::Event) {
         match event {
