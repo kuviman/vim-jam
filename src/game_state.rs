@@ -84,6 +84,8 @@ pub struct GameState {
     boss_hop: f32,
     boss_left: bool,
     show_names: bool,
+    text: &'static str,
+    text_timer: f32,
 }
 
 impl Drop for GameState {
@@ -111,6 +113,8 @@ impl GameState {
         player.name = name.to_owned();
         player.color = color;
         Self {
+            text: "",
+            text_timer: 10.0,
             boss_left: true,
             boss_hop: 0.0,
             boss_position: welcome.model.boss.position,
@@ -583,6 +587,18 @@ impl GameState {
             }
         }
 
+        if self.text_timer < 1.0 {
+            self.assets.font.draw_aligned(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                self.text,
+                self.framebuffer_size / 2.0,
+                0.5,
+                64.0,
+                Color::BLACK,
+            );
+        }
+
         self.assets.font.draw(
             framebuffer,
             &geng::PixelPerfectCamera,
@@ -833,6 +849,7 @@ impl geng::State for GameState {
     }
     fn update(&mut self, delta_time: f64) {
         self.t += delta_time as f32;
+        self.text_timer += delta_time as f32;
         let mut messages = Vec::new();
         match &mut self.connection {
             Connection::Remote(connection) => messages.extend(connection.new_messages()),
@@ -872,6 +889,8 @@ impl geng::State for GameState {
                                 self.assets.sounds.hired.play();
                                 if id == self.player.id {
                                     self.player.unemployed_time = None;
+                                    self.text = "You are a cook now!";
+                                    self.text_timer = 0.0;
                                     if let Some(seat_index) = self.player.seat {
                                         self.player.seat = None;
                                         self.player.position =
@@ -885,6 +904,8 @@ impl geng::State for GameState {
                             Event::Fire(id) => {
                                 self.assets.sounds.fired.play();
                                 if id == self.player.id {
+                                    self.text = "You were fired!";
+                                    self.text_timer = 0.0;
                                     self.player.unemployed_time = Some(0.0);
                                 }
                             }
