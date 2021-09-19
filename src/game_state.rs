@@ -66,6 +66,7 @@ impl Default for PlayerState {
 }
 
 pub struct GameState {
+    last_firing: f32,
     geng: Geng,
     last_interaction_time: HashMap<KitchenThingType, f32>,
     t: f32,
@@ -113,6 +114,7 @@ impl GameState {
         player.name = name.to_owned();
         player.color = color;
         Self {
+            last_firing: -100.0,
             text: "",
             text_timer: 10.0,
             boss_left: true,
@@ -886,7 +888,10 @@ impl geng::State for GameState {
                     for event in events {
                         match event {
                             Event::Hire(id) => {
-                                self.assets.sounds.hired.play();
+                                if self.last_firing < self.t - 1.0 {
+                                    self.assets.sounds.hired.play();
+                                }
+                                self.last_firing = self.t;
                                 if id == self.player.id {
                                     self.player.unemployed_time = None;
                                     self.text = "You are a cook now!";
@@ -902,7 +907,10 @@ impl geng::State for GameState {
                                 }
                             }
                             Event::Fire(id) => {
-                                self.assets.sounds.fired.play();
+                                if self.last_firing < self.t - 1.0 {
+                                    self.assets.sounds.fired.play();
+                                }
+                                self.last_firing = self.t;
                                 if id == self.player.id {
                                     self.text = "You were fired!";
                                     self.text_timer = 0.0;
