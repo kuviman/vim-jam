@@ -641,6 +641,7 @@ impl GameState {
                                                 self.to_send.push(ClientMessage::Event(
                                                     Event::Order(seat_index, None),
                                                 ));
+                                                self.to_send.push(ClientMessage::Event(Event::Eat));
                                             }
                                         }
                                     }
@@ -847,6 +848,7 @@ impl geng::State for GameState {
                     for event in events {
                         match event {
                             Event::Hire(id) if id == self.player.id => {
+                                self.assets.sounds.hired.play();
                                 self.player.unemployed_time = None;
                                 if let Some(seat_index) = self.player.seat {
                                     self.player.seat = None;
@@ -857,10 +859,35 @@ impl geng::State for GameState {
                                 }
                             }
                             Event::Fire(id) if id == self.player.id => {
+                                self.assets.sounds.fired.play();
                                 self.player.unemployed_time = Some(0.0);
                             }
                             Event::Interacted(typ) => {
                                 self.last_interaction_time.insert(typ, self.t);
+                                match typ {
+                                    KitchenThingType::Oven => {
+                                        self.assets.sounds.oven.play();
+                                    }
+                                    KitchenThingType::TrashCan => {
+                                        self.assets.sounds.trash.play();
+                                    }
+                                    KitchenThingType::Dough
+                                    | KitchenThingType::IngredientBox(_) => {
+                                        self.assets.sounds.pop.play();
+                                    }
+                                }
+                            }
+                            Event::Order(_, Some(_)) => {
+                                self.assets.sounds.bell.play();
+                            }
+                            Event::PlayerJoined(_) => {
+                                self.assets.sounds.hi.play();
+                            }
+                            Event::PlayerLeft(_) => {
+                                self.assets.sounds.bye.play();
+                            }
+                            Event::Eat => {
+                                self.assets.sounds.eat.play();
                             }
                             _ => {}
                         }

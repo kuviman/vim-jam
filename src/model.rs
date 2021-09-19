@@ -506,6 +506,7 @@ pub enum Event {
     Fire(Id),
     Hire(Id),
     Reset,
+    Eat,
     PlayerJoined(Player),
     PlayerUpdated(Player),
     PlayerLeft(Id),

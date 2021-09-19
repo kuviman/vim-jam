@@ -78,8 +78,27 @@ impl geng::LoadAsset for Font {
     const DEFAULT_EXT: Option<&'static str> = Some("ttf");
 }
 
-// #[derive(geng::Assets)]
-// pub struct Sounds {}
+#[derive(geng::Assets)]
+pub struct Sounds {
+    #[asset(path = "bell.mp3")]
+    pub bell: geng::Sound,
+    #[asset(path = "bye.mp3")]
+    pub bye: geng::Sound,
+    #[asset(path = "eat.mp3")]
+    pub eat: geng::Sound,
+    #[asset(path = "fired.mp3")]
+    pub fired: geng::Sound,
+    #[asset(path = "hi.mp3")]
+    pub hi: geng::Sound,
+    #[asset(path = "hired.mp3")]
+    pub hired: geng::Sound,
+    #[asset(path = "oven.mp3")]
+    pub oven: geng::Sound,
+    #[asset(path = "pop.mp3")]
+    pub pop: geng::Sound,
+    #[asset(path = "trash.mp3")]
+    pub trash: geng::Sound,
+}
 
 #[derive(geng::Assets)]
 pub struct Assets {
@@ -110,7 +129,7 @@ pub struct Assets {
     pub badge_right: ugli::Texture,
     pub order: ugli::Texture,
     pub boss: ugli::Texture,
-    // pub sounds: Sounds,
+    pub sounds: Sounds,
 }
 
 impl Assets {
