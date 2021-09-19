@@ -7,10 +7,17 @@ pub struct ConnectingState {
     name: String,
     connection: Option<Pin<Box<dyn Future<Output = (WelcomeMessage, Connection)>>>>,
     transition: Option<geng::Transition>,
+    color: Color<f32>,
 }
 
 impl ConnectingState {
-    pub fn new(geng: &Geng, assets: &Rc<Assets>, opt: &Rc<Opt>, name: String) -> Self {
+    pub fn new(
+        geng: &Geng,
+        assets: &Rc<Assets>,
+        opt: &Rc<Opt>,
+        name: String,
+        color: Color<f32>,
+    ) -> Self {
         let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), opt.addr());
         let connection = Box::pin(
             geng::net::client::connect(&addr)
@@ -29,6 +36,7 @@ impl ConnectingState {
             assets: assets.clone(),
             opt: opt.clone(),
             name,
+            color,
             connection: Some(connection),
             transition: None,
         }
@@ -75,6 +83,7 @@ impl geng::State for ConnectingState {
                     &self.assets,
                     &self.opt,
                     &self.name,
+                    self.color,
                     welcome,
                     connection,
                 ))));

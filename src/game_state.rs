@@ -2,13 +2,19 @@ use std::collections::BTreeMap;
 
 use super::*;
 
-struct PlayerState {}
+struct PlayerState {
+    position: Vec2<f32>,
+}
 
 impl PlayerState {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            position: vec2(0.0, 0.0),
+        }
     }
-    pub fn update(&mut self, player: &Player, delta_time: f32) {}
+    pub fn update(&mut self, player: &Player, delta_time: f32) {
+        self.position += (player.position - self.position) * (delta_time * 5.0).min(1.0);
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -95,11 +101,13 @@ impl GameState {
         assets: &Rc<Assets>,
         opt: &Rc<Opt>,
         name: &str,
+        color: Color<f32>,
         welcome: WelcomeMessage,
         connection: Connection,
     ) -> Self {
         let mut player = welcome.model.players[&welcome.player_id].clone();
         player.name = name.to_owned();
+        player.color = color;
         Self {
             boss_left: true,
             boss_hop: 0.0,
@@ -122,8 +130,16 @@ impl GameState {
     }
 
     fn draw_player<'a, 'b>(&'a self, renderq: &'b mut RenderQ<'a>, player: &'a Player) {
-        let mut aabb = AABB::pos_size(
+        let player_position = if player.id == self.player.id {
             player.position
+        } else {
+            self.players
+                .get(&player.id)
+                .map(|player| player.position)
+                .unwrap_or(player.position)
+        };
+        let mut aabb = AABB::pos_size(
+            player_position
                 - vec2(
                     player.radius,
                     player.radius
@@ -145,9 +161,9 @@ impl GameState {
             mem::swap(&mut aabb.x_min, &mut aabb.x_max);
         }
         let layer = r32(if player.seat.is_some() {
-            player.position.y - 0.3
+            player_position.y - 0.3
         } else {
-            player.position.y
+            player_position.y
         });
         let layer = renderq.entry(layer).or_default();
         layer.push(Box::new(move |framebuffer| {
