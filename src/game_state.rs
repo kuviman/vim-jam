@@ -83,6 +83,7 @@ pub struct GameState {
     boss_position: Vec2<f32>,
     boss_hop: f32,
     boss_left: bool,
+    show_names: bool,
 }
 
 impl Drop for GameState {
@@ -127,6 +128,7 @@ impl GameState {
             transition: None,
             to_send: Vec::new(),
             framebuffer_size: vec2(1.0, 1.0),
+            show_names: true,
         }
     }
 
@@ -456,48 +458,50 @@ impl GameState {
             }
         }
 
-        for player in self.model.players.values() {
-            if player.name.is_empty() {
-                continue;
-            }
-            let player_position = if player.id == self.player.id {
-                player.position
-            } else {
-                self.players
-                    .get(&player.id)
-                    .map(|player| player.position)
-                    .unwrap_or(player.position)
-            };
-            if let Some(pos) = self.camera.world_to_screen(
-                self.framebuffer_size,
-                player_position
-                    + vec2(
-                        0.0,
-                        if let Some(seat) = player.seat {
-                            let seat = &self.model.seats[seat];
-                            if seat.order.is_some() {
-                                player.radius * 2.7
+        if self.show_names {
+            for player in self.model.players.values() {
+                if player.name.is_empty() {
+                    continue;
+                }
+                let player_position = if player.id == self.player.id {
+                    player.position
+                } else {
+                    self.players
+                        .get(&player.id)
+                        .map(|player| player.position)
+                        .unwrap_or(player.position)
+                };
+                if let Some(pos) = self.camera.world_to_screen(
+                    self.framebuffer_size,
+                    player_position
+                        + vec2(
+                            0.0,
+                            if let Some(seat) = player.seat {
+                                let seat = &self.model.seats[seat];
+                                if seat.order.is_some() {
+                                    player.radius * 2.7
+                                } else {
+                                    player.radius * 2.1
+                                }
                             } else {
-                                player.radius * 2.1
-                            }
-                        } else {
-                            if player.pizza.is_some() {
-                                player.radius * 2.3
-                            } else {
-                                player.radius * 1.5
-                            }
-                        },
-                    ),
-            ) {
-                self.assets.font.draw_aligned(
-                    framebuffer,
-                    &geng::PixelPerfectCamera,
-                    &player.name,
-                    pos,
-                    0.5,
-                    20.0,
-                    Color::rgba(0.0, 0.0, 0.0, 0.5),
-                );
+                                if player.pizza.is_some() {
+                                    player.radius * 2.3
+                                } else {
+                                    player.radius * 1.5
+                                }
+                            },
+                        ),
+                ) {
+                    self.assets.font.draw_aligned(
+                        framebuffer,
+                        &geng::PixelPerfectCamera,
+                        &player.name,
+                        pos,
+                        0.5,
+                        20.0,
+                        Color::rgba(0.0, 0.0, 0.0, 0.5),
+                    );
+                }
             }
         }
         if let Some(pos) = self
@@ -1002,11 +1006,7 @@ impl geng::State for GameState {
                     }
                 }
                 geng::Key::T => {
-                    if self.player.unemployed_time.is_none() {
-                        self.player.unemployed_time = Some(0.0);
-                    } else {
-                        self.player.unemployed_time = None;
-                    }
+                    self.show_names = !self.show_names;
                 }
                 _ => {}
             },
