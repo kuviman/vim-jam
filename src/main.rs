@@ -98,6 +98,8 @@ pub struct Sounds {
     pub pop: geng::Sound,
     #[asset(path = "trash.mp3")]
     pub trash: geng::Sound,
+    #[asset(path = "music.mp3")]
+    pub music: geng::Sound,
 }
 
 #[derive(geng::Assets)]
@@ -201,6 +203,7 @@ fn main() {
                 move |assets| {
                     let mut assets = assets.unwrap();
                     assets.floor.set_wrap_mode(ugli::WrapMode::Repeat);
+                    assets.sounds.music.looped = true;
                     Menu::new(&geng, &Rc::new(assets), &opt)
                     // let mut model = Model::new();
                     // let (welcome, _) = model.welcome();

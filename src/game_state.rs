@@ -105,6 +105,7 @@ impl GameState {
         welcome: WelcomeMessage,
         connection: Connection,
     ) -> Self {
+        assets.sounds.music.play();
         let mut player = welcome.model.players[&welcome.player_id].clone();
         player.name = name.to_owned();
         player.color = color;
@@ -664,7 +665,9 @@ impl GameState {
                     if self.player.collide(thing.position, thing.radius) {
                         match thing.typ {
                             KitchenThingType::Dough => {
-                                if self.player.pizza.is_none() {
+                                if self.player.pizza.is_none()
+                                    && self.player.unemployed_time.is_none()
+                                {
                                     self.player.pizza = Some(Pizza {
                                         ingredients: BTreeSet::new(),
                                         state: PizzaState::Raw,
@@ -847,20 +850,25 @@ impl geng::State for GameState {
                 ServerMessage::Update(events) => {
                     for event in events {
                         match event {
-                            Event::Hire(id) if id == self.player.id => {
+                            Event::Hire(id) => {
                                 self.assets.sounds.hired.play();
-                                self.player.unemployed_time = None;
-                                if let Some(seat_index) = self.player.seat {
-                                    self.player.seat = None;
-                                    self.player.position =
-                                        self.model.seats[seat_index].leave_position;
-                                    self.to_send
-                                        .push(ClientMessage::Event(Event::Order(seat_index, None)));
+                                if id == self.player.id {
+                                    self.player.unemployed_time = None;
+                                    if let Some(seat_index) = self.player.seat {
+                                        self.player.seat = None;
+                                        self.player.position =
+                                            self.model.seats[seat_index].leave_position;
+                                        self.to_send.push(ClientMessage::Event(Event::Order(
+                                            seat_index, None,
+                                        )));
+                                    }
                                 }
                             }
-                            Event::Fire(id) if id == self.player.id => {
+                            Event::Fire(id) => {
                                 self.assets.sounds.fired.play();
-                                self.player.unemployed_time = Some(0.0);
+                                if id == self.player.id {
+                                    self.player.unemployed_time = Some(0.0);
+                                }
                             }
                             Event::Interacted(typ) => {
                                 self.last_interaction_time.insert(typ, self.t);
