@@ -51,6 +51,7 @@ pub struct Player {
     pub color: Color<f32>,
     pub t: f32,
     pub left: bool,
+    pub name: String,
 }
 
 impl Player {
@@ -70,6 +71,7 @@ impl Player {
             seat: None,
             color: hsv(global_rng().gen_range(0.0..=1.0), 1.0, 1.5),
             left: global_rng().gen_bool(0.5),
+            name: String::new(),
         };
         player
     }

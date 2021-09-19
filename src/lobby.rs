@@ -1,74 +1,16 @@
 use super::*;
 
-pub struct Lobby {
-    geng: Geng,
-    assets: Rc<Assets>,
-    opt: Rc<Opt>,
-    transition: Option<geng::Transition>,
-}
-
-impl Lobby {
-    pub fn new(geng: &Geng, assets: Rc<Assets>, opt: &Rc<Opt>) -> Self {
-        Self {
-            geng: geng.clone(),
-            assets,
-            opt: opt.clone(),
-            transition: None,
-        }
-    }
-}
-
-impl geng::State for Lobby {
-    fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        ugli::clear(framebuffer, Some(Color::rgb(0.0, 0.0, 1.0)), None);
-    }
-    fn update(&mut self, delta_time: f64) {}
-    fn handle_event(&mut self, event: geng::Event) {
-        match event {
-            geng::Event::KeyDown { key, .. } => {
-                match key {
-                    geng::Key::Num1 => {
-                        let mut model = Model::new();
-                        let (welcome, _) = model.welcome();
-                        self.transition = Some(geng::Transition::Push(Box::new(GameState::new(
-                            &self.geng,
-                            &self.assets,
-                            &self.opt,
-                            None,
-                            welcome,
-                            Connection::Local {
-                                next_tick: 0.0,
-                                model,
-                            },
-                        ))));
-                    }
-                    geng::Key::Num2 => {
-                        self.transition = Some(geng::Transition::Push(Box::new(
-                            ConnectingState::new(&self.geng, &self.assets, &self.opt, None),
-                        )));
-                    }
-                    _ => {}
-                }
-            }
-            _ => {}
-        }
-    }
-    fn transition(&mut self) -> Option<geng::Transition> {
-        self.transition.take()
-    }
-}
-
 pub struct ConnectingState {
     geng: Geng,
     assets: Rc<Assets>,
     opt: Rc<Opt>,
-    player: Option<Player>,
+    name: String,
     connection: Option<Pin<Box<dyn Future<Output = (WelcomeMessage, Connection)>>>>,
     transition: Option<geng::Transition>,
 }
 
 impl ConnectingState {
-    pub fn new(geng: &Geng, assets: &Rc<Assets>, opt: &Rc<Opt>, player: Option<Player>) -> Self {
+    pub fn new(geng: &Geng, assets: &Rc<Assets>, opt: &Rc<Opt>, name: String) -> Self {
         let addr = format!("{}://{}", option_env!("WSS").unwrap_or("ws"), opt.addr());
         let connection = Box::pin(
             geng::net::client::connect(&addr)
@@ -86,7 +28,7 @@ impl ConnectingState {
             geng: geng.clone(),
             assets: assets.clone(),
             opt: opt.clone(),
-            player,
+            name,
             connection: Some(connection),
             transition: None,
         }
@@ -132,7 +74,7 @@ impl geng::State for ConnectingState {
                     &self.geng,
                     &self.assets,
                     &self.opt,
-                    self.player.take(),
+                    &self.name,
                     welcome,
                     connection,
                 ))));

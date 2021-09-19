@@ -94,17 +94,12 @@ impl GameState {
         geng: &Geng,
         assets: &Rc<Assets>,
         opt: &Rc<Opt>,
-        player: Option<Player>,
+        name: &str,
         welcome: WelcomeMessage,
         connection: Connection,
     ) -> Self {
-        let player = match player {
-            Some(mut player) => {
-                player.id = welcome.player_id;
-                player
-            }
-            None => welcome.model.players[&welcome.player_id].clone(),
-        };
+        let mut player = welcome.model.players[&welcome.player_id].clone();
+        player.name = name.to_owned();
         Self {
             boss_left: true,
             boss_hop: 0.0,
@@ -441,6 +436,43 @@ impl GameState {
         for (_layer, rens) in renderq.into_iter().rev() {
             for ren in rens {
                 ren(framebuffer);
+            }
+        }
+
+        for player in self.model.players.values() {
+            if player.name.is_empty() {
+                continue;
+            }
+            if let Some(pos) = self.camera.world_to_screen(
+                self.framebuffer_size,
+                player.position
+                    + vec2(
+                        0.0,
+                        if let Some(seat) = player.seat {
+                            let seat = &self.model.seats[seat];
+                            if seat.order.is_some() {
+                                player.radius * 2.7
+                            } else {
+                                player.radius * 2.1
+                            }
+                        } else {
+                            if player.pizza.is_some() {
+                                player.radius * 2.3
+                            } else {
+                                player.radius * 1.5
+                            }
+                        },
+                    ),
+            ) {
+                self.assets.font.draw_aligned(
+                    framebuffer,
+                    &geng::PixelPerfectCamera,
+                    &player.name,
+                    pos,
+                    0.5,
+                    20.0,
+                    Color::rgba(0.0, 0.0, 0.0, 0.5),
+                );
             }
         }
 

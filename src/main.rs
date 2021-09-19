@@ -4,6 +4,7 @@ use std::collections::BTreeSet;
 
 pub mod game_state;
 pub mod lobby;
+mod menu;
 pub mod model;
 pub mod net;
 #[cfg(not(target_arch = "wasm32"))]
@@ -11,6 +12,7 @@ pub mod server;
 
 pub use game_state::GameState;
 pub use lobby::*;
+use menu::*;
 pub use model::*;
 pub use net::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -176,7 +178,7 @@ fn main() {
                 move |assets| {
                     let mut assets = assets.unwrap();
                     assets.floor.set_wrap_mode(ugli::WrapMode::Repeat);
-                    ConnectingState::new(&geng, &Rc::new(assets), &opt, None)
+                    Menu::new(&geng, &Rc::new(assets), &opt)
                     // let mut model = Model::new();
                     // let (welcome, _) = model.welcome();
                     // GameState::new(
