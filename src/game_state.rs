@@ -506,11 +506,19 @@ impl GameState {
             }
         }
         for player in self.model.players.values() {
+            let player_position = if player.id == self.player.id {
+                player.position
+            } else {
+                self.players
+                    .get(&player.id)
+                    .map(|player| player.position)
+                    .unwrap_or(player.position)
+            };
             if let Some(pizza) = &player.pizza {
                 self.draw_pizza(
                     framebuffer,
                     pizza,
-                    player.position + vec2(0.0, player.radius),
+                    player_position + vec2(0.0, player.radius),
                 );
             }
         }
