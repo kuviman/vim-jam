@@ -500,6 +500,20 @@ impl GameState {
                 );
             }
         }
+        if let Some(pos) = self
+            .camera
+            .world_to_screen(self.framebuffer_size, self.boss_position + vec2(0.0, 1.5))
+        {
+            self.assets.font.draw_aligned(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                "BOSS",
+                pos,
+                0.5,
+                35.0,
+                Color::RED,
+            );
+        }
 
         for seat in &self.model.seats {
             if let Some(order) = &seat.order {
