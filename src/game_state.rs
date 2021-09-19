@@ -459,9 +459,17 @@ impl GameState {
             if player.name.is_empty() {
                 continue;
             }
+            let player_position = if player.id == self.player.id {
+                player.position
+            } else {
+                self.players
+                    .get(&player.id)
+                    .map(|player| player.position)
+                    .unwrap_or(player.position)
+            };
             if let Some(pos) = self.camera.world_to_screen(
                 self.framebuffer_size,
-                player.position
+                player_position
                     + vec2(
                         0.0,
                         if let Some(seat) = player.seat {

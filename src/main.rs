@@ -78,6 +78,9 @@ impl geng::LoadAsset for Font {
     const DEFAULT_EXT: Option<&'static str> = Some("ttf");
 }
 
+// #[derive(geng::Assets)]
+// pub struct Sounds {}
+
 #[derive(geng::Assets)]
 pub struct Assets {
     pub font: Rc<Font>,
@@ -107,6 +110,7 @@ pub struct Assets {
     pub badge_right: ugli::Texture,
     pub order: ugli::Texture,
     pub boss: ugli::Texture,
+    // pub sounds: Sounds,
 }
 
 impl Assets {
