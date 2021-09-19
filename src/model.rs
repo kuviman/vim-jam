@@ -140,7 +140,7 @@ impl Ingredient {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KitchenThingType {
     Oven,
     Dough,
@@ -509,4 +509,5 @@ pub enum Event {
     PlayerLeft(Id),
     BossUpdate(Boss),
     Order(usize, Option<Order>),
+    Interacted(KitchenThingType),
 }

@@ -61,6 +61,8 @@ impl Default for PlayerState {
 
 pub struct GameState {
     geng: Geng,
+    last_interaction_time: HashMap<KitchenThingType, f32>,
+    t: f32,
     current_order: BTreeSet<Ingredient>,
     assets: Rc<Assets>,
     opt: Rc<Opt>,
@@ -101,6 +103,8 @@ impl GameState {
             None => welcome.model.players[&welcome.player_id].clone(),
         };
         Self {
+            t: 0.0,
+            last_interaction_time: default(),
             current_order: BTreeSet::new(),
             geng: geng.clone(),
             assets: assets.clone(),
@@ -347,6 +351,12 @@ impl GameState {
                 vec2(thing.radius, thing.radius * 0.5),
                 Color::rgba(0.0, 0.0, 0.0, 0.3),
             );
+            let interacted = self
+                .last_interaction_time
+                .get(&thing.typ)
+                .copied()
+                .unwrap_or(-100.0)
+                > self.t - 0.5;
             match thing.typ {
                 KitchenThingType::IngredientBox(ingredient) => {
                     self.geng.draw_2d().textured_quad(
@@ -375,8 +385,20 @@ impl GameState {
                             vec2(1.0, 1.0) * thing.radius * 2.0,
                         ),
                         match thing.typ {
-                            KitchenThingType::Oven => &self.assets.oven,
-                            KitchenThingType::TrashCan => &self.assets.trash,
+                            KitchenThingType::Oven => {
+                                if interacted {
+                                    &self.assets.oven_opened
+                                } else {
+                                    &self.assets.oven
+                                }
+                            }
+                            KitchenThingType::TrashCan => {
+                                if interacted {
+                                    &self.assets.trash_opened
+                                } else {
+                                    &self.assets.trash
+                                }
+                            }
                             KitchenThingType::Dough => &self.assets.dough,
                             _ => unreachable!(),
                         },
@@ -465,7 +487,7 @@ impl GameState {
             ),
             vec2(10.0, 10.0),
             48.0,
-            Color::WHITE,
+            Color::BLACK,
         );
 
         // for &node in &self.model.pathfind_nodes {
@@ -560,12 +582,18 @@ impl GameState {
                                         ingredients: BTreeSet::new(),
                                         state: PizzaState::Raw,
                                     });
+                                    self.to_send
+                                        .push(ClientMessage::Event(Event::Interacted(thing.typ)));
                                 }
                             }
                             KitchenThingType::IngredientBox(ingredient) => {
                                 if let Some(pizza) = &mut self.player.pizza {
                                     if pizza.state == PizzaState::Raw {
-                                        pizza.ingredients.insert(ingredient);
+                                        if pizza.ingredients.insert(ingredient) {
+                                            self.to_send.push(ClientMessage::Event(
+                                                Event::Interacted(thing.typ),
+                                            ));
+                                        }
                                     }
                                 }
                             }
@@ -573,11 +601,18 @@ impl GameState {
                                 if let Some(pizza) = &mut self.player.pizza {
                                     if pizza.state == PizzaState::Raw {
                                         pizza.state = PizzaState::Cooked;
+                                        self.to_send.push(ClientMessage::Event(Event::Interacted(
+                                            thing.typ,
+                                        )));
                                     }
                                 }
                             }
                             KitchenThingType::TrashCan => {
-                                self.player.pizza = None;
+                                if self.player.pizza.is_some() {
+                                    self.to_send
+                                        .push(ClientMessage::Event(Event::Interacted(thing.typ)));
+                                    self.player.pizza = None;
+                                }
                             }
                         }
                     }
@@ -689,6 +724,7 @@ impl geng::State for GameState {
         self.draw_impl(framebuffer);
     }
     fn update(&mut self, delta_time: f64) {
+        self.t += delta_time as f32;
         let mut messages = Vec::new();
         match &mut self.connection {
             Connection::Remote(connection) => messages.extend(connection.new_messages()),
@@ -737,6 +773,9 @@ impl geng::State for GameState {
                             Event::Fire(id) if id == self.player.id => {
                                 self.player.unemployed_time = Some(0.0);
                             }
+                            Event::Interacted(typ) => {
+                                self.last_interaction_time.insert(typ, self.t);
+                            }
                             _ => {}
                         }
                         self.model.handle(event);
@@ -766,6 +805,9 @@ impl geng::State for GameState {
             .update(&self.player, delta_time);
 
         self.update_camera(delta_time);
+        self.model
+            .players
+            .insert(self.player.id, self.player.clone());
     }
     fn handle_event(&mut self, event: geng::Event) {
         match event {
